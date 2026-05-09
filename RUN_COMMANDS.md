@@ -9,8 +9,8 @@ Run the existing flat operation-bank baseline:
 
 ```bash
 source ~/.config/skill_tree/env.sh
-bash train_locomo.sh
-bash eval_locomo.sh
+bash scripts/train_locomo_flat_memskill.sh
+bash scripts/eval_locomo_flat_memskill.sh
 ```
 
 For real runs, avoid typing the key directly in commands. Store it once in a
@@ -39,8 +39,8 @@ Run the PPO skill-tree router over `skills_memory/`:
 
 ```bash
 source ~/.config/skill_tree/env.sh
-bash train_locomo_skill_tree.sh
-bash eval_locomo_skill_tree.sh
+bash scripts/train_locomo_skilltree_negmem_autoevolve.sh
+bash scripts/eval_locomo_skilltree_negmem.sh
 ```
 
 The important flags are:
@@ -66,7 +66,7 @@ To run the matching skill-tree checkpoint without loading negative memories,
 use the ablation script:
 
 ```bash
-bash eval_locomo_skill_tree_no_negative.sh
+bash scripts/eval_locomo_skilltree_nonegmem.sh
 ```
 
 Do not hand-write this ablation from `main.py` defaults unless you also pass the
@@ -83,10 +83,10 @@ To test whether negative memory retrieval is adding noise, sweep the prompt
 guardrail count and optional similarity threshold:
 
 ```bash
-NEGATIVE_MEMORY_TOP_K=1 bash eval_locomo_skill_tree.sh
-NEGATIVE_MEMORY_TOP_K=2 bash eval_locomo_skill_tree.sh
-NEGATIVE_MEMORY_TOP_K=3 bash eval_locomo_skill_tree.sh
-NEGATIVE_MEMORY_TOP_K=3 NEGATIVE_MEMORY_MIN_SCORE=0.35 bash eval_locomo_skill_tree.sh
+NEGATIVE_MEMORY_TOP_K=1 bash scripts/eval_locomo_skilltree_negmem.sh
+NEGATIVE_MEMORY_TOP_K=2 bash scripts/eval_locomo_skilltree_negmem.sh
+NEGATIVE_MEMORY_TOP_K=3 bash scripts/eval_locomo_skilltree_negmem.sh
+NEGATIVE_MEMORY_TOP_K=3 NEGATIVE_MEMORY_MIN_SCORE=0.35 bash scripts/eval_locomo_skilltree_negmem.sh
 ```
 
 `NEGATIVE_MEMORY_MIN_SCORE` filters out retrieved negative memories below the
@@ -96,7 +96,7 @@ top-k behavior.
 For the standard LoCoMo sweep, run:
 
 ```bash
-bash sweep_locomo_negative_memory.sh
+bash scripts/sweep_locomo_skilltree_negmem_topk.sh
 ```
 
 It evaluates:
@@ -110,6 +110,25 @@ It evaluates:
 Each case writes its result JSON and log under
 `results/negative_memory_sweep_<timestamp>/`, plus a `summary.tsv` with F1 and
 LLM Judge.
+
+The repository root still has compatibility wrappers such as
+`train_locomo_skill_tree.sh`, but new experiments should use the descriptive
+scripts under `scripts/`. See `scripts/README.md` for the naming rule:
+`<phase>_<dataset>_<method>_<variant>.sh`.
+
+Latest negative-memory sweep on the 40-entry store:
+
+| Case | F1 | LLM Judge | Readout |
+| --- | ---: | ---: | --- |
+| no negative | 0.1852 | 0.2357 | lower bound |
+| top1 | 0.1993 | 0.2707 | helps over no negative |
+| top2 | 0.2204 | 0.3041 | best in this sweep |
+| top3 | 0.1925 | 0.2596 | too much prompt noise |
+| top3 + min score 0.35 | 0.1403 | 0.1975 | threshold too strict |
+
+Current default conclusion: use negative memory, but limit retrieval to
+`NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The LoCoMo
+skill-tree train/eval scripts now default to top-2 negative memories.
 
 ## 3. Negative Memories
 
@@ -136,17 +155,19 @@ python -B record_negative_memory.py \
 Use `--dialogue-file -` to read the dialogue from stdin, or `--dry-run` to
 preview the generated fields without writing a markdown file.
 
-`train_locomo_skill_tree.sh` also passes `--auto-record-negative-memory`, so
-training QA failures are written as compact markdown lessons, up to
-`--negative-memory-write-limit`. Evaluation does not write new negative
-memories, which avoids contaminating the test set with test answers.
+`scripts/train_locomo_skilltree_negmem_autoevolve.sh` also passes
+`--auto-record-negative-memory`, so training QA failures are written as compact
+markdown lessons, up to `--negative-memory-write-limit`. Evaluation does not
+write new negative memories, which avoids contaminating the test set with test
+answers.
 
 ## 4. Skill-Tree Hard-Case Evolution
 
-`train_locomo_skill_tree.sh` passes `--enable-skill-tree-evolution`. During
-training, failed QA cases are grounded back to the skill-tree paths that created
-the retrieved memories. At the end of an outer epoch, the designer can refine an
-implicated skill node or add one child node under it.
+`scripts/train_locomo_skilltree_negmem_autoevolve.sh` passes
+`--enable-skill-tree-evolution`. During training, failed QA cases are grounded
+back to the skill-tree paths that created the retrieved memories. At the end of
+an outer epoch, the designer can refine an implicated skill node or add one
+child node under it.
 
 The script limits evolution to one hard-case bucket per run:
 
