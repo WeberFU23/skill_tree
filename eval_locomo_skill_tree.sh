@@ -9,6 +9,9 @@ export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
 NEGATIVE_MEMORY_TOP_K="${NEGATIVE_MEMORY_TOP_K:-3}"
+MEMORY_CACHE_SUFFIX="${MEMORY_CACHE_SUFFIX:-locomo_skill_tree_eval}"
+OUT_FILE="${OUT_FILE:-./results/locomo_skill_tree_eval.json}"
+WANDB_RUN_NAME="${WANDB_RUN_NAME:-locomo-skill-tree-eval}"
 NEGATIVE_MEMORY_ARGS=()
 if [[ -n "${NEGATIVE_MEMORY_MIN_SCORE:-}" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-min-score "$NEGATIVE_MEMORY_MIN_SCORE")
@@ -16,7 +19,7 @@ fi
 
 python -B main.py \
     --disable-flash-attn \
-    --memory-cache-suffix "locomo_skill_tree_eval" \
+    --memory-cache-suffix "$MEMORY_CACHE_SUFFIX" \
     --overwrite \
     --eval-only \
     --inference-workers 1 \
@@ -49,6 +52,6 @@ python -B main.py \
     --negative-memory-top-k "$NEGATIVE_MEMORY_TOP_K" \
     "${NEGATIVE_MEMORY_ARGS[@]}" \
     --skip-load-snapshot-manager \
-    --wandb-run-name locomo-skill-tree-eval \
+    --wandb-run-name "$WANDB_RUN_NAME" \
     --save-dir ./checkpoints/locomo_skill_tree \
-    --out-file ./results/locomo_skill_tree_eval.json
+    --out-file "$OUT_FILE"

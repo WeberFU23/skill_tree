@@ -8,9 +8,13 @@ export HF_ENDPOINT="${HF_ENDPOINT:-https://hf-mirror.com}"
 export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
+MEMORY_CACHE_SUFFIX="${MEMORY_CACHE_SUFFIX:-locomo_skill_tree_no_negative}"
+OUT_FILE="${OUT_FILE:-./results/locomo_skill_tree_no_negative.json}"
+WANDB_RUN_NAME="${WANDB_RUN_NAME:-locomo-skill-tree-no-negative}"
+
 python -B main.py \
     --disable-flash-attn \
-    --memory-cache-suffix "locomo_skill_tree_no_negative" \
+    --memory-cache-suffix "$MEMORY_CACHE_SUFFIX" \
     --overwrite \
     --eval-only \
     --inference-workers 1 \
@@ -39,6 +43,6 @@ python -B main.py \
     --skill-tree-top-k 3 \
     --skill-tree-max-depth 4 \
     --skip-load-snapshot-manager \
-    --wandb-run-name locomo-skill-tree-no-negative \
+    --wandb-run-name "$WANDB_RUN_NAME" \
     --save-dir ./checkpoints/locomo_skill_tree \
-    --out-file ./results/locomo_skill_tree_no_negative.json
+    --out-file "$OUT_FILE"

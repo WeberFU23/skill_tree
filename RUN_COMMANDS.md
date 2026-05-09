@@ -93,6 +93,24 @@ NEGATIVE_MEMORY_TOP_K=3 NEGATIVE_MEMORY_MIN_SCORE=0.35 bash eval_locomo_skill_tr
 embedding/keyword similarity score. Leave it unset to preserve the original
 top-k behavior.
 
+For the standard LoCoMo sweep, run:
+
+```bash
+bash sweep_locomo_negative_memory.sh
+```
+
+It evaluates:
+
+- `no_negative`
+- `top1`
+- `top2`
+- `top3`
+- `top3_score035`
+
+Each case writes its result JSON and log under
+`results/negative_memory_sweep_<timestamp>/`, plus a `summary.tsv` with F1 and
+LLM Judge.
+
 ## 3. Negative Memories
 
 Negative memories are markdown lessons from mistakes or user corrections. They
