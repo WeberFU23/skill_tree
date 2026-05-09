@@ -19,7 +19,6 @@ python main.py \
     --designer-model "deepseek-chat" \
     --api \
     --api-base "https://api.deepseek.com" \
-    --api-key "$DEEPSEEK_API_KEY" \
     --retriever contriever \
     --state-encoder sentence-transformers/all-MiniLM-L6-v2 \
     --op-encoder sentence-transformers/all-MiniLM-L6-v2 \

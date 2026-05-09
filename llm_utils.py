@@ -53,6 +53,13 @@ _key_index = 0
 _client_lock = threading.Lock()
 
 
+def _redact_api_key(api_key):
+    key = str(api_key or "")
+    if len(key) <= 8:
+        return "<redacted>"
+    return f"{key[:4]}...{key[-4:]}"
+
+
 def _get_client_round_robin(
     api_keys,
     base_url="",
@@ -130,10 +137,10 @@ def get_llm_response_via_api(prompt,
             completion = client.chat.completions.create(**api_params)
             break
         except Exception as e:
-            print(client.api_key, e)
+            print(f"API request failed for key {_redact_api_key(client.api_key)}: {e}")
             if "request timed out" in str(e).strip().lower():
                 break
-            print(client.api_key, "Retrying...")
+            print(f"API request failed for key {_redact_api_key(client.api_key)}. Retrying...")
             time.sleep(TIME_GAP)
 
     if completion is None:

@@ -19,7 +19,6 @@ python main.py \
     --model "[YOUR_MODEL_NAME]" \
     --api \
     --api-base "[YOUR_API_BASE]" \
-    --api-key "YOUR_API_KEY_1" "YOUR_API_KEY_2" \
     --retriever contriever \
     --designer-freq 1 \
     --inner-epochs 100 \

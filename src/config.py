@@ -3,6 +3,7 @@ Configuration for Agentic Memory System
 """
 import argparse
 import math
+import os
 
 _NEW_ACTION_P_REF = 0.01
 
@@ -249,9 +250,8 @@ def get_agentic_memory_args():
                         help='Model for designer LLM; defaults to --model')
     parser.add_argument('--api', action='store_true', help='Use API instead of local model')
     parser.add_argument('--api-base', type=str, default='[YOUR_API_BASE]')
-    parser.add_argument('--api-key', type=str, nargs='+',
-                        default=["YOUR_API_KEY_1",
-                                 "YOUR_API_KEY_2"])
+    parser.add_argument('--api-key', type=str, nargs='+', default=None,
+                        help='API key(s). Prefer DEEPSEEK_API_KEY/OPENAI_API_KEY env vars.')
     parser.add_argument('--temperature', type=float, default=0.0)
     parser.add_argument('--max-new-tokens', type=int, default=2048)
     parser.add_argument('--llm-judge-model', type=str, default='openai/gpt-oss-120b',
@@ -421,4 +421,12 @@ def get_agentic_memory_args():
                         help='When resuming from a checkpoint, start a new wandb run instead of resuming the saved run ID')
 
     args = parser.parse_args()
+    if not args.api_key:
+        env_keys = (
+            os.environ.get("DEEPSEEK_API_KEY")
+            or os.environ.get("OPENAI_API_KEY")
+            or os.environ.get("API_KEY")
+            or ""
+        )
+        args.api_key = [key.strip() for key in env_keys.split(",") if key.strip()] or None
     return args

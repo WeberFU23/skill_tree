@@ -8,17 +8,37 @@ directory-backed skill tree path.
 Run the existing flat operation-bank baseline:
 
 ```bash
-export DEEPSEEK_API_KEY="your_key"
+source ~/.config/skill_tree/env.sh
 bash train_locomo.sh
 bash eval_locomo.sh
 ```
+
+For real runs, avoid typing the key directly in commands. Store it once in a
+private shell file outside the repo:
+
+```bash
+mkdir -p ~/.config/skill_tree
+umask 077
+read -rsp "DeepSeek API key: " DEEPSEEK_API_KEY
+printf '\n'
+printf 'export DEEPSEEK_API_KEY=%q\n' "$DEEPSEEK_API_KEY" > ~/.config/skill_tree/env.sh
+unset DEEPSEEK_API_KEY
+chmod 600 ~/.config/skill_tree/env.sh
+grep -qxF 'source ~/.config/skill_tree/env.sh' ~/.bashrc || \
+  printf '\n# skill_tree secrets\nsource ~/.config/skill_tree/env.sh\n' >> ~/.bashrc
+source ~/.config/skill_tree/env.sh
+```
+
+The scripts read `DEEPSEEK_API_KEY` from the environment and do not pass it as
+`--api-key`, so it is not exposed in the process command line. API error logs
+also redact the key.
 
 ## 2. Skill Tree Path
 
 Run the PPO skill-tree router over `skills_memory/`:
 
 ```bash
-export DEEPSEEK_API_KEY="your_key"
+source ~/.config/skill_tree/env.sh
 bash train_locomo_skill_tree.sh
 bash eval_locomo_skill_tree.sh
 ```
