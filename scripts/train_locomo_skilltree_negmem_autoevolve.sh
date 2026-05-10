@@ -9,6 +9,7 @@ export WANDB_MODE="${WANDB_MODE:-offline}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
 NEGATIVE_MEMORY_TOP_K="${NEGATIVE_MEMORY_TOP_K:-2}"
+NEGATIVE_MEMORY_DIR="${NEGATIVE_MEMORY_DIR:-./negative_memories}"
 NEGATIVE_MEMORY_ARGS=()
 if [[ -n "${NEGATIVE_MEMORY_MIN_SCORE:-}" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-min-score "$NEGATIVE_MEMORY_MIN_SCORE")
@@ -45,7 +46,7 @@ python -B main.py \
     --skill-tree-evolution-min-cases 5 \
     --skill-tree-evolution-max-buckets 1 \
     --enable-negative-memory \
-    --negative-memory-dir ./negative_memories \
+    --negative-memory-dir "$NEGATIVE_MEMORY_DIR" \
     --negative-memory-top-k "$NEGATIVE_MEMORY_TOP_K" \
     "${NEGATIVE_MEMORY_ARGS[@]}" \
     --auto-record-negative-memory \

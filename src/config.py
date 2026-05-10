@@ -102,7 +102,7 @@ class AgenticMemoryConfig:
         # prior mistakes or user corrections, retrieved as prompt guardrails.
         self.enable_negative_memory = False
         self.negative_memory_dir = "./negative_memories"
-        self.negative_memory_top_k = 3
+        self.negative_memory_top_k = 2
         self.negative_memory_max_chars = 1200
         self.negative_memory_min_score = None
         self.auto_record_negative_memory = False
@@ -382,7 +382,7 @@ def get_agentic_memory_args():
                         help='Retrieve markdown negative memories as prompt guardrails')
     parser.add_argument('--negative-memory-dir', type=str, default='./negative_memories',
                         help='Directory containing markdown negative memory files')
-    parser.add_argument('--negative-memory-top-k', type=int, default=3,
+    parser.add_argument('--negative-memory-top-k', type=int, default=2,
                         help='Top-k negative memories retrieved for executor/eval prompts')
     parser.add_argument('--negative-memory-max-chars', type=int, default=1200,
                         help='Max characters included from each negative memory')

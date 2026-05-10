@@ -130,7 +130,43 @@ Current default conclusion: use negative memory, but limit retrieval to
 `NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The LoCoMo
 skill-tree train/eval scripts now default to top-2 negative memories.
 
-## 3. Negative Memories
+## 3. Curated Negative-Memory Run
+
+Automatic training failures are useful but noisy. Before increasing top-k, build
+a curated representative set:
+
+```bash
+bash scripts/curate_locomo_skilltree_negmem.sh
+```
+
+This reads `negative_memories/`, clusters near-duplicate mistake patterns, writes
+representatives to `curated_negative_memories/`, and creates a markdown report
+under `results/negative_memory_curation_<timestamp>.md`.
+
+Evaluate the curated set with:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated.sh
+```
+
+For custom directories:
+
+```bash
+NEGATIVE_MEMORY_DIR=./curated_negative_memories \
+  bash scripts/eval_locomo_skilltree_negmem.sh
+```
+
+Important curation knobs:
+
+```bash
+CURATION_SIMILARITY_THRESHOLD=0.55
+CURATION_MAX_CURATED=30
+CURATION_MIN_CLUSTER_SIZE=1
+CURATION_MIN_QUALITY=0
+CURATION_OVERWRITE=1
+```
+
+## 4. Negative Memories
 
 Negative memories are markdown lessons from mistakes or user corrections. They
 are optional prompt guardrails and are loaded only when
@@ -161,7 +197,20 @@ markdown lessons, up to `--negative-memory-write-limit`. Evaluation does not
 write new negative memories, which avoids contaminating the test set with test
 answers.
 
-## 4. Skill-Tree Hard-Case Evolution
+You can write one entry manually:
+
+```bash
+python -B record_negative_memory.py \
+  --problem "The model answered A when the corrected answer was B." \
+  --wrong-behavior "Ignored the user's explicit correction." \
+  --correction "Use B when condition X appears." \
+  --lesson "Check condition X before reusing answer A." \
+  --trigger "Similar questions involving condition X" \
+  --user-id "user_123" \
+  --tag reasoning_error
+```
+
+## 5. Skill-Tree Hard-Case Evolution
 
 `scripts/train_locomo_skilltree_negmem_autoevolve.sh` passes
 `--enable-skill-tree-evolution`. During training, failed QA cases are grounded
@@ -178,16 +227,3 @@ The script limits evolution to one hard-case bucket per run:
 
 This keeps the lite LoCoMo run cheap and avoids broad edits from a single small
 experiment. Evolved markdown files are written under `skills_memory/`.
-
-You can write one entry manually:
-
-```bash
-python -B record_negative_memory.py \
-  --problem "The model answered A when the corrected answer was B." \
-  --wrong-behavior "Ignored the user's explicit correction." \
-  --correction "Use B when condition X appears." \
-  --lesson "Check condition X before reusing answer A." \
-  --trigger "Similar questions involving condition X" \
-  --user-id "user_123" \
-  --tag reasoning_error
-```
