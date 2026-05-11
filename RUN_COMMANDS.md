@@ -153,7 +153,35 @@ Current default conclusion: use negative memory, but limit retrieval to
 `NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The LoCoMo
 skill-tree train/eval scripts now default to top-2 negative memories.
 
-## 3. Curated Negative-Memory Run
+## 3. Current Performance Path
+
+The designer ablation did not improve test performance because legacy
+`--enable-designer` refines the flat operation bank, while the active skill-tree
+path executes markdown nodes under `skills_memory/`. Its useful diagnosis was
+tested by strengthening `insert.md`, but the clean raw40 ablation still
+underperformed baseline. The current performance path is therefore curated
+negative-memory retrieval, not further broadening the insert skill prompt.
+
+Run the best-known curated aggregate evaluation:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055.sh
+```
+
+Then sweep curated negative-memory prompt budget:
+
+```bash
+bash scripts/sweep_locomo_skilltree_curated_negmem_budget.sh
+```
+
+The sweep searches:
+
+- top-k: `1`, `2`, `3`
+- max chars per negative memory: `900`, `1200`, `1800`
+
+Use the best `summary.tsv` row as the next default curated setting.
+
+## 4. Curated Negative-Memory Run
 
 Automatic training failures are useful but noisy. Before increasing top-k, build
 a curated representative set:
@@ -192,7 +220,7 @@ CURATION_MIN_QUALITY=0
 CURATION_OVERWRITE=1
 ```
 
-## 4. Negative Memories
+## 5. Negative Memories
 
 Negative memories are markdown lessons from mistakes or user corrections. They
 are optional prompt guardrails and are loaded only when
@@ -236,7 +264,7 @@ python -B record_negative_memory.py \
   --tag reasoning_error
 ```
 
-## 5. Skill-Tree Hard-Case Evolution
+## 6. Skill-Tree Hard-Case Evolution
 
 `scripts/train_locomo_skilltree_negmem_autoevolve.sh` passes
 `--enable-skill-tree-evolution`. During training, failed QA cases are grounded

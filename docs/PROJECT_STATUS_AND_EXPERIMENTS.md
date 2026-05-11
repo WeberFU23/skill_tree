@@ -95,6 +95,8 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/sweep_locomo_skilltree_negmem_topk.sh` | Sweep negative-memory top-k and score threshold |
 | `scripts/curate_locomo_skilltree_negmem.sh` | Cluster raw negative memories into curated aggregate lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated.sh` | Evaluate curated negative-memory directory |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting |
+| `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
 
@@ -122,6 +124,7 @@ and memory construction also introduce run-to-run variance.
 | Aggregate curated eval | Preserve multiple examples per mistake cluster | threshold 0.55, 8 aggregate memories | 0.2249 | 0.2946 | Best curated F1; aggregation fixed much of the compression loss |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
+| Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
 
 ## Current Conclusions
 
@@ -141,14 +144,17 @@ and memory construction also introduce run-to-run variance.
    operation bank, while the skill-tree execution path is edited by
    `--enable-skill-tree-evolution`.
 7. The designer ablation still produced a useful diagnosis: failures were
-   concentrated around missing entity-specific facts. That diagnosis has been
-   migrated into `skills_memory/memory_operations/insert/insert.md` by making
-   entity attributes, relations, dates, quantities, hobbies, allergies,
-   teammates, gifts, and similar atomic facts explicit insertion triggers.
+   concentrated around missing entity-specific facts. Directly migrating that
+   diagnosis into stronger `insert.md` wording was tested, but the clean raw40
+   ablation underperformed baseline, so the tuning was reverted.
 8. Raw negative-memory accumulation can hurt performance. The 60-entry raw store
    produced a much worse run after the designer ablation auto-recorded 20 more
    failures. Designer ablation training now makes negative-memory auto-recording
    opt-in so future runs remain comparable by default.
+9. The current performance path should focus on negative-memory curation and
+   retrieval filtering rather than further broadening the insert skill prompt.
+10. The next optimization target is a curated negative-memory budget sweep over
+    top-k and per-memory character budget, using `curated_negative_memories_agg055`.
 
 ## Recommended Next Experiments
 
