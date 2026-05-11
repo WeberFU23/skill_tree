@@ -10,6 +10,7 @@ export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
 NEGATIVE_MEMORY_TOP_K="${NEGATIVE_MEMORY_TOP_K:-2}"
 NEGATIVE_MEMORY_DIR="${NEGATIVE_MEMORY_DIR:-./negative_memories}"
+NEGATIVE_MEMORY_MAX_CHARS="${NEGATIVE_MEMORY_MAX_CHARS:-1200}"
 MEMORY_CACHE_SUFFIX="${MEMORY_CACHE_SUFFIX:-locomo_skill_tree_eval}"
 OUT_FILE="${OUT_FILE:-./results/locomo_skill_tree_eval.json}"
 WANDB_RUN_NAME="${WANDB_RUN_NAME:-locomo-skill-tree-eval}"
@@ -51,6 +52,7 @@ python -B main.py \
     --enable-negative-memory \
     --negative-memory-dir "$NEGATIVE_MEMORY_DIR" \
     --negative-memory-top-k "$NEGATIVE_MEMORY_TOP_K" \
+    --negative-memory-max-chars "$NEGATIVE_MEMORY_MAX_CHARS" \
     "${NEGATIVE_MEMORY_ARGS[@]}" \
     --skip-load-snapshot-manager \
     --wandb-run-name "$WANDB_RUN_NAME" \

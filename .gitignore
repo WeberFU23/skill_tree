@@ -6,7 +6,7 @@ logs/
 results/
 wandb/
 experiment_artifacts/
-curated_negative_memories/
+curated_negative_memories*/
 
 negative_memories/*.md
 !negative_memories/README.md

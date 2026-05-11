@@ -196,7 +196,139 @@ def _yaml_list(items: Iterable[str]) -> str:
     return "[" + ", ".join(f'"{item}"' for item in cleaned) + "]"
 
 
-def _write_curated_entry(out_dir: Path, idx: int, cluster: Cluster) -> Path:
+def _extract_labeled_value(text: str, label: str) -> str:
+    pattern = rf"(?:^|\n)\s*{re.escape(label)}\s*:\s*(.*?)(?=\n[A-Za-z][A-Za-z ]{{0,40}}\s*:|\Z)"
+    match = re.search(pattern, str(text or ""), flags=re.IGNORECASE | re.DOTALL)
+    return _compact(match.group(1), 500) if match else ""
+
+
+def _entry_example(entry: NegativeMemoryEntry) -> dict:
+    problem = _extract_section(entry.body, "Problem")
+    wrong = _extract_section(entry.body, "Wrong Behavior")
+    correction = _extract_section(entry.body, "Correction")
+    trigger = _extract_section(entry.body, "Trigger")
+    question = (
+        _extract_labeled_value(problem, "Question")
+        or _compact(trigger or problem, 220)
+    )
+    expected = (
+        _extract_labeled_value(correction, "Expected answer")
+        or _compact(correction, 220)
+    )
+    prediction = (
+        _extract_labeled_value(wrong, "Prediction")
+        or _compact(wrong, 220)
+    )
+    return {
+        "path": entry.path + ".md",
+        "question": question,
+        "expected": expected,
+        "prediction": prediction,
+        "trigger": _compact(trigger, 220),
+    }
+
+
+def _ranked_examples(cluster: Cluster, limit: int) -> List[dict]:
+    entries = sorted(
+        cluster.entries,
+        key=lambda entry: (
+            -_quality(entry)[0],
+            entry.path,
+        ),
+    )
+    examples = []
+    seen = set()
+    for entry in entries:
+        example = _entry_example(entry)
+        key = (example["question"].lower(), example["expected"].lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        examples.append(example)
+        if limit > 0 and len(examples) >= limit:
+            break
+    return examples
+
+
+def _example_lines(examples: Sequence[dict], *, include_prediction: bool = False) -> str:
+    lines = []
+    for example in examples:
+        line = f"- Q: {example['question']} -> Expected: {example['expected']}"
+        if include_prediction and example.get("prediction"):
+            line += f" | Prior wrong answer: {example['prediction']}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _cluster_topic(cluster: Cluster, examples: Sequence[dict]) -> str:
+    text = "\n".join(
+        [example["question"] for example in examples]
+        + [_extract_section(entry.body, "Trigger") for entry in cluster.entries]
+    )
+    terms = [
+        term for term in sorted(_tokenize(text))
+        if not term.isdigit() and len(term) > 3
+    ]
+    return ", ".join(terms[:12])
+
+
+def _aggregate_sections(cluster: Cluster, max_examples: int) -> dict:
+    rep = _representative(cluster)
+    examples = _ranked_examples(cluster, max_examples)
+    if not examples:
+        return {
+            "Problem": _extract_section(rep.body, "Problem"),
+            "Wrong Behavior": _extract_section(rep.body, "Wrong Behavior"),
+            "Correction": _extract_section(rep.body, "Correction"),
+            "Lesson": _extract_section(rep.body, "Lesson"),
+            "Trigger": _extract_section(rep.body, "Trigger"),
+        }
+
+    rep_lesson = _extract_section(rep.body, "Lesson")
+    rep_problem = _compact(_extract_section(rep.body, "Problem"), 500)
+    example_lines = _example_lines(examples)
+    wrong_lines = _example_lines(examples, include_prediction=True)
+    topic = _cluster_topic(cluster, examples)
+
+    problem = (
+        f"Cluster of {cluster.size} related negative-memory failures.\n"
+        f"Representative problem: {rep_problem}\n\n"
+        "Concrete source questions:\n"
+        + "\n".join(f"- {example['question']}" for example in examples)
+    )
+    wrong_behavior = (
+        "Prior runs answered these memory QA questions incorrectly or from "
+        "unsupported retrieved evidence.\n"
+        f"{wrong_lines}"
+    )
+    correction = (
+        "Preserve and apply these concrete corrections when a future query "
+        "matches the same entity, time, relationship, or requested attribute:\n"
+        f"{example_lines}"
+    )
+    lesson = (
+        f"{rep_lesson}\n\n"
+        "Do not collapse different people, dates, or attributes into one generic "
+        "memory. Before answering, align the query with the closest concrete "
+        "correction above and only use an answer supported by retrieved evidence."
+    )
+    trigger = (
+        "Retrieve this lesson for LoCoMo memory QA questions similar to:\n"
+        + "\n".join(f"- {example['question']}" for example in examples)
+    )
+    if topic:
+        trigger += f"\nTopic terms: {topic}"
+    return {
+        "Problem": problem,
+        "Wrong Behavior": wrong_behavior,
+        "Correction": correction,
+        "Lesson": lesson,
+        "Trigger": trigger,
+    }
+
+
+def _write_curated_entry(out_dir: Path, idx: int, cluster: Cluster,
+                         max_examples: int) -> Path:
     rep = _representative(cluster)
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     title = f"curated {rep.title}"
@@ -210,13 +342,7 @@ def _write_curated_entry(out_dir: Path, idx: int, cluster: Cluster) -> Path:
     scope_id = rep.scope_id or "null"
     visibility = rep.visibility or "shared"
 
-    sections = {
-        "Problem": _extract_section(rep.body, "Problem"),
-        "Wrong Behavior": _extract_section(rep.body, "Wrong Behavior"),
-        "Correction": _extract_section(rep.body, "Correction"),
-        "Lesson": _extract_section(rep.body, "Lesson"),
-        "Trigger": _extract_section(rep.body, "Trigger"),
-    }
+    sections = _aggregate_sections(cluster, max_examples)
     slug = _slugify(title)
     file_path = out_dir / f"{idx:03d}-{slug}.md"
     content = (
@@ -257,6 +383,7 @@ def _write_report(
     clusters: Sequence[Cluster],
     selected: Sequence[Cluster],
     threshold: float,
+    max_examples: int,
 ) -> None:
     lines = [
         "# Negative Memory Curation Report",
@@ -268,6 +395,7 @@ def _write_report(
         f"Loaded entries: `{sum(cluster.size for cluster in clusters)}`",
         f"Clusters: `{len(clusters)}`",
         f"Selected representatives: `{len(selected)}`",
+        f"Examples per curated memory: `{max_examples}`",
         "",
         "| Cluster | Size | Quality | Representative | Tags |",
         "| ---: | ---: | ---: | --- | --- |",
@@ -290,9 +418,14 @@ def _write_report(
             f"- Representative: `{rep.path}.md`",
             f"- Quality: {quality:.2f} ({', '.join(reasons)})",
             f"- Lesson: {_compact(_extract_section(rep.body, 'Lesson'), 500)}",
-            f"- Trigger: {_compact(_extract_section(rep.body, 'Trigger'), 500)}",
-            "- Source files:",
+            "- Concrete corrections:",
         ])
+        for example in _ranked_examples(cluster, max_examples):
+            lines.append(
+                f"  - Q: {_compact(example['question'], 180)} -> "
+                f"Expected: {_compact(example['expected'], 180)}"
+            )
+        lines.append("- Source files:")
         for entry in cluster.entries:
             lines.append(f"  - `{entry.path}.md`")
         lines.append("")
@@ -327,6 +460,8 @@ def main() -> None:
                         help="Only export representatives at or above this quality score")
     parser.add_argument("--max-curated", type=int, default=30,
                         help="Maximum curated representatives to export; <=0 means no limit")
+    parser.add_argument("--max-examples-per-cluster", type=int, default=8,
+                        help="Concrete source corrections kept inside each curated memory")
     parser.add_argument("--write-curated", action="store_true",
                         help="Write curated markdown files")
     parser.add_argument("--overwrite", action="store_true",
@@ -351,7 +486,7 @@ def main() -> None:
     if args.write_curated:
         _prepare_output_dir(input_dir, output_dir, overwrite=args.overwrite)
         for idx, cluster in enumerate(selected, start=1):
-            _write_curated_entry(output_dir, idx, cluster)
+            _write_curated_entry(output_dir, idx, cluster, args.max_examples_per_cluster)
 
     _write_report(
         report,
@@ -360,6 +495,7 @@ def main() -> None:
         clusters=clusters,
         selected=selected,
         threshold=args.similarity_threshold,
+        max_examples=args.max_examples_per_cluster,
     )
     print(f"Loaded entries: {len(store.entries)}")
     print(f"Clusters: {len(clusters)}")

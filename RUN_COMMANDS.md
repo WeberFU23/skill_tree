@@ -142,6 +142,8 @@ bash scripts/curate_locomo_skilltree_negmem.sh
 This reads `negative_memories/`, clusters near-duplicate mistake patterns, writes
 representatives to `curated_negative_memories/`, and creates a markdown report
 under `results/negative_memory_curation_<timestamp>.md`.
+Curated entries aggregate concrete source corrections from each cluster instead
+of keeping only one representative failure.
 
 Evaluate the curated set with:
 
@@ -161,6 +163,7 @@ Important curation knobs:
 ```bash
 CURATION_SIMILARITY_THRESHOLD=0.55
 CURATION_MAX_CURATED=30
+CURATION_MAX_EXAMPLES_PER_CLUSTER=8
 CURATION_MIN_CLUSTER_SIZE=1
 CURATION_MIN_QUALITY=0
 CURATION_OVERWRITE=1
