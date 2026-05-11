@@ -57,6 +57,15 @@ Note: in the skill-tree path, the effective skill editor is
 operation bank and is therefore tracked as an ablation rather than the default
 performance path.
 
+The designer ablation reads negative memories by default but does not write new
+ones into `negative_memories/`. If you intentionally want it to auto-record more
+negative lessons, opt in explicitly:
+
+```bash
+AUTO_RECORD_NEGATIVE_MEMORY=1 NEGATIVE_MEMORY_WRITE_LIMIT=20 \
+  bash scripts/train_locomo_skilltree_negmem_designer_autoevolve.sh
+```
+
 The important flags are:
 
 ```bash

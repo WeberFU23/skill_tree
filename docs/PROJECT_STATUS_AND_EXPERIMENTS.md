@@ -121,6 +121,7 @@ and memory construction also introduce run-to-run variance.
 | Curated representative eval | Test looser curation | threshold 0.75, 29 representative memories | 0.2019 | 0.2882 | Better than 0.55 but below raw top2 |
 | Aggregate curated eval | Preserve multiple examples per mistake cluster | threshold 0.55, 8 aggregate memories | 0.2249 | 0.2946 | Best curated F1; aggregation fixed much of the compression loss |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
+| Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 
 ## Current Conclusions
 
@@ -144,6 +145,10 @@ and memory construction also introduce run-to-run variance.
    migrated into `skills_memory/memory_operations/insert/insert.md` by making
    entity attributes, relations, dates, quantities, hobbies, allergies,
    teammates, gifts, and similar atomic facts explicit insertion triggers.
+8. Raw negative-memory accumulation can hurt performance. The 60-entry raw store
+   produced a much worse run after the designer ablation auto-recorded 20 more
+   failures. Designer ablation training now makes negative-memory auto-recording
+   opt-in so future runs remain comparable by default.
 
 ## Recommended Next Experiments
 

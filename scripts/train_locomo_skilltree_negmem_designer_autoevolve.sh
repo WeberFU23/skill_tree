@@ -10,9 +10,17 @@ export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
 NEGATIVE_MEMORY_TOP_K="${NEGATIVE_MEMORY_TOP_K:-2}"
 NEGATIVE_MEMORY_DIR="${NEGATIVE_MEMORY_DIR:-./negative_memories}"
+AUTO_RECORD_NEGATIVE_MEMORY="${AUTO_RECORD_NEGATIVE_MEMORY:-0}"
+NEGATIVE_MEMORY_WRITE_LIMIT="${NEGATIVE_MEMORY_WRITE_LIMIT:-20}"
 NEGATIVE_MEMORY_ARGS=()
 if [[ -n "${NEGATIVE_MEMORY_MIN_SCORE:-}" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-min-score "$NEGATIVE_MEMORY_MIN_SCORE")
+fi
+if [[ "$AUTO_RECORD_NEGATIVE_MEMORY" == "1" ]]; then
+    NEGATIVE_MEMORY_ARGS+=(
+        --auto-record-negative-memory
+        --negative-memory-write-limit "$NEGATIVE_MEMORY_WRITE_LIMIT"
+    )
 fi
 
 python -B main.py \
@@ -52,8 +60,6 @@ python -B main.py \
     --negative-memory-dir "$NEGATIVE_MEMORY_DIR" \
     --negative-memory-top-k "$NEGATIVE_MEMORY_TOP_K" \
     "${NEGATIVE_MEMORY_ARGS[@]}" \
-    --auto-record-negative-memory \
-    --negative-memory-write-limit 20 \
     --wandb-run-name locomo-skill-tree-negmem-designer-train \
     --save-dir ./checkpoints/locomo_skill_tree_designer \
     --out-file ./results/locomo_skilltree_negmem_designer_train.json
