@@ -196,6 +196,13 @@ Current curated default: `NEGATIVE_MEMORY_TOP_K=1` and
 `NEGATIVE_MEMORY_MAX_CHARS=1200`. This is now the best-known LoCoMo setting in
 the small development split.
 
+Because memory construction and LLM judging are not fully deterministic, repeat
+the current best setting before treating a single score as conclusive:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh
+```
+
 ## 4. Curated Negative-Memory Run
 
 Automatic training failures are useful but noisy. Before increasing top-k, build
