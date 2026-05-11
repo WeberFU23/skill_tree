@@ -43,6 +43,20 @@ bash scripts/train_locomo_skilltree_negmem_autoevolve.sh
 bash scripts/eval_locomo_skilltree_negmem.sh
 ```
 
+To run the same skill-tree path with the original MemSkill operation-bank
+designer also enabled, use the explicit designer experiment:
+
+```bash
+source ~/.config/skill_tree/env.sh
+bash scripts/train_locomo_skilltree_negmem_designer_autoevolve.sh
+bash scripts/eval_locomo_skilltree_negmem_designer.sh
+```
+
+Note: in the skill-tree path, the effective skill editor is
+`--enable-skill-tree-evolution`; legacy `--enable-designer` evolves the flat
+operation bank and is therefore tracked as an ablation rather than the default
+performance path.
+
 The important flags are:
 
 ```bash

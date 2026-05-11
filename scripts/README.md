@@ -18,7 +18,9 @@ Current scripts:
 | `train_locomo_flat_memskill.sh` | Original flat MemSkill LoCoMo baseline training |
 | `eval_locomo_flat_memskill.sh` | Original flat MemSkill LoCoMo baseline evaluation |
 | `train_locomo_skilltree_negmem_autoevolve.sh` | LoCoMo skill-tree training with negative memory auto-recording and skill-tree hard-case evolution |
+| `train_locomo_skilltree_negmem_designer_autoevolve.sh` | LoCoMo skill-tree training with negative memory, legacy operation-bank designer, and skill-tree hard-case evolution |
 | `eval_locomo_skilltree_negmem.sh` | LoCoMo skill-tree evaluation with negative memory retrieval |
+| `eval_locomo_skilltree_negmem_designer.sh` | Evaluate the checkpoint produced by the designer-enabled skill-tree run |
 | `eval_locomo_skilltree_negmem_curated.sh` | LoCoMo skill-tree evaluation with curated negative memory retrieval |
 | `eval_locomo_skilltree_nonegmem.sh` | LoCoMo skill-tree evaluation without negative memory retrieval |
 | `sweep_locomo_skilltree_negmem_topk.sh` | LoCoMo negative-memory top-k / score-threshold sweep |

@@ -11,8 +11,9 @@ update_type: insert
 
 ## Description
 
-Memory skill for inserting new durable information that is useful beyond the
-current text chunk and not already covered by retrieved memories.
+Memory skill for inserting new durable information about entities, attributes,
+relations, events, dates, quantities, preferences, or constraints that is useful
+beyond the current text chunk and not already covered by retrieved memories.
 
 ## Purpose
 
@@ -23,19 +24,29 @@ reasoning or user-specific behavior.
 
 - The text chunk introduces a durable fact, preference, event, plan, constraint,
   or reusable task detail.
-- The text chunk introduces entity-specific factual details such as
-  relationships, shared interests, recommendations, dates, achievements,
-  physical changes, pet details, recipes, or ingredients.
+- The text chunk adds a new attribute or relation for a named entity, including
+  people, pets, places, events, groups, objects, or recurring activities.
+- The text chunk includes a specific date, time, quantity, count, list item,
+  title, location, award, teammate, friend, family relation, allergy, hobby,
+  gift, purchase, recipe, ingredient, or other detail that may be asked later.
+- A known entity appears again and the chunk says something new about that
+  entity, even if the detail seems small.
 - Retrieved memories do not already contain the same information.
 - The information should remain useful after the current chunk is gone.
 
 ## How To Apply
 
-- Compare the text chunk with retrieved memories to avoid duplicates.
-- Keep each memory concise, specific, and grounded in the text.
-- Preserve important entities, time, location, task state, cause, outcome, or
-  constraints when they matter.
-- Split unrelated facts into separate memory items.
+- Identify named entities in the chunk, then compare retrieved memories for
+  existing facts about each entity.
+- If the chunk adds a new attribute, relation, event, date, quantity, list item,
+  or preference for an entity, store it as a separate concise memory.
+- Preserve exact entity names, dates, numbers, titles, temporal markers, and
+  relation words. Do not replace them with vague summaries.
+- Split unrelated facts into separate memory items, especially when a sentence
+  mentions multiple people, pets, hobbies, teammates, allergies, gifts, or
+  events.
+- Prefer complete atomic facts over broad summaries. For example, store each
+  hobby, allergy, teammate, award, or gift separately when they are distinct.
 - Explicitly store entity-specific factual details even if they seem minor,
   unless already covered by retrieved memories.
 

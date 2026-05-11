@@ -88,7 +88,9 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/train_locomo_flat_memskill.sh` | Original flat MemSkill LoCoMo baseline |
 | `scripts/eval_locomo_flat_memskill.sh` | Evaluate flat MemSkill LoCoMo baseline |
 | `scripts/train_locomo_skilltree_negmem_autoevolve.sh` | Train skill-tree PPO with negative-memory auto-recording and hard-case evolution |
+| `scripts/train_locomo_skilltree_negmem_designer_autoevolve.sh` | Train skill-tree PPO with negative memory, legacy designer, and hard-case evolution |
 | `scripts/eval_locomo_skilltree_negmem.sh` | Evaluate skill-tree checkpoint with negative memory |
+| `scripts/eval_locomo_skilltree_negmem_designer.sh` | Evaluate the designer-enabled skill-tree checkpoint |
 | `scripts/eval_locomo_skilltree_nonegmem.sh` | Ablation: same checkpoint without negative memory |
 | `scripts/sweep_locomo_skilltree_negmem_topk.sh` | Sweep negative-memory top-k and score threshold |
 | `scripts/curate_locomo_skilltree_negmem.sh` | Cluster raw negative memories into curated aggregate lessons |
@@ -118,6 +120,7 @@ and memory construction also introduce run-to-run variance.
 | Curated representative eval | Test deduplicated negative memory | threshold 0.55, 8 representative memories | 0.2003 | 0.2691 | Too compressed; lost useful examples |
 | Curated representative eval | Test looser curation | threshold 0.75, 29 representative memories | 0.2019 | 0.2882 | Better than 0.55 but below raw top2 |
 | Aggregate curated eval | Preserve multiple examples per mistake cluster | threshold 0.55, 8 aggregate memories | 0.2249 | 0.2946 | Best curated F1; aggregation fixed much of the compression loss |
+| Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 
 ## Current Conclusions
 
@@ -132,6 +135,15 @@ and memory construction also introduce run-to-run variance.
    keep multiple concrete `Question -> Expected` examples from the cluster.
 5. Skill-tree evolution is wired, but the current short LoCoMo run did not prove
    a clear improvement from evolved skill definitions.
+6. The legacy MemSkill `--enable-designer` can now be run as an explicit
+   skill-tree ablation. In the current architecture it evolves the flat
+   operation bank, while the skill-tree execution path is edited by
+   `--enable-skill-tree-evolution`.
+7. The designer ablation still produced a useful diagnosis: failures were
+   concentrated around missing entity-specific facts. That diagnosis has been
+   migrated into `skills_memory/memory_operations/insert/insert.md` by making
+   entity attributes, relations, dates, quantities, hobbies, allergies,
+   teammates, gifts, and similar atomic facts explicit insertion triggers.
 
 ## Recommended Next Experiments
 
