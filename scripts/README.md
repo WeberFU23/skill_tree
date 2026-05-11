@@ -22,7 +22,7 @@ Current scripts:
 | `eval_locomo_skilltree_negmem.sh` | LoCoMo skill-tree evaluation with negative memory retrieval |
 | `eval_locomo_skilltree_negmem_designer.sh` | Evaluate the checkpoint produced by the designer-enabled skill-tree run |
 | `eval_locomo_skilltree_negmem_curated.sh` | LoCoMo skill-tree evaluation with curated negative memory retrieval |
-| `eval_locomo_skilltree_negmem_curated_agg055.sh` | Current best-known curated aggregate LoCoMo evaluation entrypoint |
+| `eval_locomo_skilltree_negmem_curated_agg055.sh` | Current best-known curated aggregate LoCoMo evaluation entrypoint; defaults to top-1 negative memory with 1200 chars |
 | `eval_locomo_skilltree_nonegmem.sh` | LoCoMo skill-tree evaluation without negative memory retrieval |
 | `sweep_locomo_skilltree_negmem_topk.sh` | LoCoMo negative-memory top-k / score-threshold sweep |
 | `sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt character budget |

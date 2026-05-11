@@ -95,7 +95,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/sweep_locomo_skilltree_negmem_topk.sh` | Sweep negative-memory top-k and score threshold |
 | `scripts/curate_locomo_skilltree_negmem.sh` | Cluster raw negative memories into curated aggregate lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated.sh` | Evaluate curated negative-memory directory |
-| `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -122,6 +122,7 @@ and memory construction also introduce run-to-run variance.
 | Curated representative eval | Test deduplicated negative memory | threshold 0.55, 8 representative memories | 0.2003 | 0.2691 | Too compressed; lost useful examples |
 | Curated representative eval | Test looser curation | threshold 0.75, 29 representative memories | 0.2019 | 0.2882 | Better than 0.55 but below raw top2 |
 | Aggregate curated eval | Preserve multiple examples per mistake cluster | threshold 0.55, 8 aggregate memories | 0.2249 | 0.2946 | Best curated F1; aggregation fixed much of the compression loss |
+| Curated budget sweep | Optimize aggregate negative-memory retrieval budget | `curated_negative_memories_agg055`, top1, 1200 chars | 0.2286 | 0.3312 | Best current LoCoMo result in the small development split |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -151,23 +152,23 @@ and memory construction also introduce run-to-run variance.
    produced a much worse run after the designer ablation auto-recorded 20 more
    failures. Designer ablation training now makes negative-memory auto-recording
    opt-in so future runs remain comparable by default.
-9. The current performance path should focus on negative-memory curation and
-   retrieval filtering rather than further broadening the insert skill prompt.
-10. The next optimization target is a curated negative-memory budget sweep over
-    top-k and per-memory character budget, using `curated_negative_memories_agg055`.
+9. The curated budget sweep found the strongest current setting:
+   `curated_negative_memories_agg055`, top-1 negative memory, and 1200
+   characters per retrieved lesson. This reached F1 0.2286 and LLM Judge 0.3312.
+10. The current performance path should focus on validating this curated top1
+    setting across repeat runs and larger data, not further broadening the
+    insert skill prompt.
 
 ## Recommended Next Experiments
 
 1. Repeat the key configs three times and report mean/std:
-   no-negative, raw top2, curated aggregate threshold 0.55.
+   no-negative, raw top2, curated aggregate threshold 0.55 with top1/1200.
 2. Inspect curated aggregate markdown files manually and remove misleading or
    test-leaking lessons if any appear.
-3. Try smaller negative-memory prompt budgets with aggregate curation:
-   `NEGATIVE_MEMORY_MAX_CHARS=900`, `1200`, `1800`.
-4. Add category-wise comparison tables for LoCoMo categories 1-4.
-5. Run on a larger split or another long-memory benchmark after the small
+3. Add category-wise comparison tables for LoCoMo categories 1-4.
+4. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-6. Keep fine-tuning/RL over negative examples as a later phase. The current
+5. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

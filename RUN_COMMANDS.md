@@ -149,9 +149,9 @@ Latest negative-memory sweep on the 40-entry store:
 | top3 | 0.1925 | 0.2596 | too much prompt noise |
 | top3 + min score 0.35 | 0.1403 | 0.1975 | threshold too strict |
 
-Current default conclusion: use negative memory, but limit retrieval to
-`NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The LoCoMo
-skill-tree train/eval scripts now default to top-2 negative memories.
+Raw-store conclusion: use negative memory, but limit retrieval to
+`NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The raw
+LoCoMo skill-tree train/eval scripts default to top-2 negative memories.
 
 ## 3. Current Performance Path
 
@@ -179,7 +179,22 @@ The sweep searches:
 - top-k: `1`, `2`, `3`
 - max chars per negative memory: `900`, `1200`, `1800`
 
-Use the best `summary.tsv` row as the next default curated setting.
+Latest curated budget sweep on `curated_negative_memories_agg055`:
+
+| Case | F1 | LLM Judge | Readout |
+| --- | ---: | ---: | --- |
+| top1, 900 chars | 0.2230 | 0.3153 | strong, compact |
+| top1, 1200 chars | 0.2286 | 0.3312 | best current setting |
+| top1, 1800 chars | 0.1946 | 0.2914 | too verbose |
+| top2, 900 chars | 0.2040 | 0.2548 | extra retrieved lesson added noise |
+| top2, 1200 chars | 0.2018 | 0.2707 | below top1 |
+| top2, 1800 chars | 0.2119 | 0.3010 | below top1 |
+| top3, 1200 chars | 0.2072 | 0.2850 | below top1 |
+| top3, 1800 chars | 0.2149 | 0.3105 | below top1 |
+
+Current curated default: `NEGATIVE_MEMORY_TOP_K=1` and
+`NEGATIVE_MEMORY_MAX_CHARS=1200`. This is now the best-known LoCoMo setting in
+the small development split.
 
 ## 4. Curated Negative-Memory Run
 
