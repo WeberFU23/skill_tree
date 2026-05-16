@@ -223,6 +223,15 @@ python -B scripts/summarize_locomo_repeat_categories.py \
   results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/summary.tsv
 ```
 
+To compare curated agg055 against raw top2 category-by-category:
+
+```bash
+python -B scripts/compare_locomo_repeat_configs.py \
+  results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/category_summary.tsv \
+  --baseline raw_top2 \
+  --candidate curated_agg055_top1_chars1200
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
@@ -231,10 +240,20 @@ Latest core-config repeat on 2026-05-16:
 | raw top2 | 0.2254 +/- 0.0091 | 0.2850 +/- 0.0013 | best stable setting in this repeat |
 | curated agg055 top1, 1200 chars | 0.1897 +/- 0.0194 | 0.2691 +/- 0.0251 | unstable and below raw top2 in repeat |
 
+Category-wise readout from the same repeat:
+
+| Config | Cat 1 F1 / Judge | Cat 2 F1 / Judge | Cat 3 F1 / Judge | Cat 4 F1 / Judge |
+| --- | ---: | ---: | ---: | ---: |
+| no negative | 0.1563 / 0.2343 | 0.1072 / 0.0897 | 0.3239 / 0.4917 | 0.1931 / 0.2833 |
+| raw top2 | 0.1483 / 0.2440 | 0.2102 / 0.1359 | 0.5576 / 0.6500 | 0.2234 / 0.3177 |
+| curated agg055 top1, 1200 chars | 0.1426 / 0.2271 | 0.1358 / 0.1180 | 0.4747 / 0.5333 | 0.1962 / 0.3156 |
+
 This repeat supersedes the single curated sweep high as the current decision
 point: keep curated aggregate memory as an analysis path, but use raw top2 as
 the stronger stable baseline until category-wise analysis explains the curated
-drop.
+drop. The largest curated losses are category 2 and category 3, so the next
+diagnostic should inspect which curated lessons were retrieved for those
+queries.
 
 ## 4. Curated Negative-Memory Run
 

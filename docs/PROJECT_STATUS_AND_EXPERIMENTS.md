@@ -99,6 +99,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
+| `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -130,6 +131,8 @@ and memory construction also introduce run-to-run variance.
 | Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | no negative mean/std | 0.1756 +/- 0.0049 | 0.2458 +/- 0.0134 | Lower bound remained stable |
 | Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | raw top2 mean/std | 0.2254 +/- 0.0091 | 0.2850 +/- 0.0013 | Best stable setting in this repeat |
 | Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | curated agg055 top1/1200 mean/std | 0.1897 +/- 0.0194 | 0.2691 +/- 0.0251 | Curated setting was unstable and below raw top2 |
+| Core-config category summary | Diagnose where raw top2 beats curated agg055 | Category 2 F1 mean: raw top2 vs curated | 0.2102 vs 0.1358 | 0.1359 vs 0.1180 | Curated lost much of raw top2's category-2 gain |
+| Core-config category summary | Diagnose where raw top2 beats curated agg055 | Category 3 F1 mean: raw top2 vs curated | 0.5576 vs 0.4747 | 0.6500 vs 0.5333 | Curated also lost the largest category-3 gain |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -166,18 +169,21 @@ and memory construction also introduce run-to-run variance.
     negative memory top2 averaged F1 0.2254 +/- 0.0091 and LLM Judge
     0.2850 +/- 0.0013, while curated agg055 top1/1200 averaged only F1
     0.1897 +/- 0.0194 and LLM Judge 0.2691 +/- 0.0251.
-11. The current stable baseline is raw top2. Curated aggregate memory remains an
+11. Category-wise summary shows the curated drop is concentrated in category 2
+    and category 3. Raw top2 preserved strong gains in both, while curated
+    agg055 lost much of that improvement.
+12. The current stable baseline is raw top2. Curated aggregate memory remains an
     analysis path, but it should not be treated as the default performance path
     until category-wise analysis explains and fixes the repeat drop.
 
 ## Recommended Next Experiments
 
-1. Summarize the 2026-05-16 core repeat category-wise:
-   `python -B scripts/summarize_locomo_repeat_categories.py results/repeat_locomo_skilltree_core_configs_20260516_202008/summary.tsv`.
+1. Compare raw top2 vs curated agg055 at the query/category level to locate why
+   curated hurts category 2 and category 3.
 2. Inspect curated aggregate markdown files manually and remove misleading or
    test-leaking lessons if any appear.
-3. Compare raw top2 vs curated agg055 at the question/category level to locate
-   where curated retrieval hurts.
+3. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
+   accepting future curated changes.
 4. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 5. Keep fine-tuning/RL over negative examples as a later phase. The current
