@@ -97,6 +97,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/eval_locomo_skilltree_negmem_curated.sh` | Evaluate curated negative-memory directory |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
+| `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -168,6 +169,7 @@ and memory construction also introduce run-to-run variance.
 
 1. Repeat the key configs three times and report mean/std:
    no-negative, raw top2, curated aggregate threshold 0.55 with top1/1200.
+   Use `REPEATS=3 bash scripts/repeat_locomo_skilltree_core_configs.sh`.
 2. Inspect curated aggregate markdown files manually and remove misleading or
    test-leaking lessons if any appear.
 3. Add category-wise comparison tables for LoCoMo categories 1-4.

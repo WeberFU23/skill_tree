@@ -203,6 +203,19 @@ the current best setting before treating a single score as conclusive:
 REPEATS=3 bash scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh
 ```
 
+To compare the three core LoCoMo conditions with repeated mean/std in one run,
+use:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_core_configs.sh
+```
+
+This runs:
+
+- `no_negative`
+- raw negative memory `top2`
+- curated aggregate memory `curated_negative_memories_agg055`, `top1`, `1200` chars
+
 ## 4. Curated Negative-Memory Run
 
 Automatic training failures are useful but noisy. Before increasing top-k, build
