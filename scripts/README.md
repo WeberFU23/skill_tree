@@ -25,6 +25,7 @@ Current scripts:
 | `eval_locomo_skilltree_negmem_curated_agg055.sh` | Current best-known curated aggregate LoCoMo evaluation entrypoint; defaults to top-1 negative memory with 1200 chars |
 | `repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the current best-known curated aggregate LoCoMo evaluation and report mean/std |
 | `repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
+| `summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `eval_locomo_skilltree_nonegmem.sh` | LoCoMo skill-tree evaluation without negative memory retrieval |
 | `sweep_locomo_skilltree_negmem_topk.sh` | LoCoMo negative-memory top-k / score-threshold sweep |
 | `sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt character budget |

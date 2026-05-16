@@ -216,6 +216,26 @@ This runs:
 - raw negative memory `top2`
 - curated aggregate memory `curated_negative_memories_agg055`, `top1`, `1200` chars
 
+After it finishes, summarize category-wise means from the produced logs:
+
+```bash
+python -B scripts/summarize_locomo_repeat_categories.py \
+  results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/summary.tsv
+```
+
+Latest core-config repeat on 2026-05-16:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| no negative | 0.1756 +/- 0.0049 | 0.2458 +/- 0.0134 | lower bound |
+| raw top2 | 0.2254 +/- 0.0091 | 0.2850 +/- 0.0013 | best stable setting in this repeat |
+| curated agg055 top1, 1200 chars | 0.1897 +/- 0.0194 | 0.2691 +/- 0.0251 | unstable and below raw top2 in repeat |
+
+This repeat supersedes the single curated sweep high as the current decision
+point: keep curated aggregate memory as an analysis path, but use raw top2 as
+the stronger stable baseline until category-wise analysis explains the curated
+drop.
+
 ## 4. Curated Negative-Memory Run
 
 Automatic training failures are useful but noisy. Before increasing top-k, build

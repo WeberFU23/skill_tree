@@ -98,6 +98,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
+| `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -126,6 +127,9 @@ and memory construction also introduce run-to-run variance.
 | Aggregate curated eval | Preserve multiple examples per mistake cluster | threshold 0.55, 8 aggregate memories | 0.2249 | 0.2946 | Best curated F1; aggregation fixed much of the compression loss |
 | Curated budget sweep | Optimize aggregate negative-memory retrieval budget | `curated_negative_memories_agg055`, top1, 1200 chars | 0.2286 | 0.3312 | Best current LoCoMo result in the small development split |
 | Curated best-setting repeat 1 | Re-run the selected default after making it the standard script | `curated_negative_memories_agg055`, top1, 1200 chars | 0.2121 | 0.2882 | Lower than the sweep high point, confirming run-to-run variance |
+| Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | no negative mean/std | 0.1756 +/- 0.0049 | 0.2458 +/- 0.0134 | Lower bound remained stable |
+| Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | raw top2 mean/std | 0.2254 +/- 0.0091 | 0.2850 +/- 0.0013 | Best stable setting in this repeat |
+| Core-config repeat | Repeat no-negative, raw top2, and curated agg055 top1/1200 three times | curated agg055 top1/1200 mean/std | 0.1897 +/- 0.0194 | 0.2691 +/- 0.0251 | Curated setting was unstable and below raw top2 |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -155,24 +159,25 @@ and memory construction also introduce run-to-run variance.
    produced a much worse run after the designer ablation auto-recorded 20 more
    failures. Designer ablation training now makes negative-memory auto-recording
    opt-in so future runs remain comparable by default.
-9. The curated budget sweep found the strongest current setting:
+9. The curated budget sweep found the strongest single-run setting:
    `curated_negative_memories_agg055`, top-1 negative memory, and 1200
    characters per retrieved lesson. This reached F1 0.2286 and LLM Judge 0.3312.
-10. A repeat of the same setting scored F1 0.2121 and LLM Judge 0.2882, so the
-    next decision should be based on repeated mean/std rather than the best
-    single sweep row.
-11. The current performance path should focus on validating this curated top1
-    setting across repeat runs and larger data, not further broadening the
-    insert skill prompt.
+10. Core-config repeat on 2026-05-16 changed the current decision point: raw
+    negative memory top2 averaged F1 0.2254 +/- 0.0091 and LLM Judge
+    0.2850 +/- 0.0013, while curated agg055 top1/1200 averaged only F1
+    0.1897 +/- 0.0194 and LLM Judge 0.2691 +/- 0.0251.
+11. The current stable baseline is raw top2. Curated aggregate memory remains an
+    analysis path, but it should not be treated as the default performance path
+    until category-wise analysis explains and fixes the repeat drop.
 
 ## Recommended Next Experiments
 
-1. Repeat the key configs three times and report mean/std:
-   no-negative, raw top2, curated aggregate threshold 0.55 with top1/1200.
-   Use `REPEATS=3 bash scripts/repeat_locomo_skilltree_core_configs.sh`.
+1. Summarize the 2026-05-16 core repeat category-wise:
+   `python -B scripts/summarize_locomo_repeat_categories.py results/repeat_locomo_skilltree_core_configs_20260516_202008/summary.tsv`.
 2. Inspect curated aggregate markdown files manually and remove misleading or
    test-leaking lessons if any appear.
-3. Add category-wise comparison tables for LoCoMo categories 1-4.
+3. Compare raw top2 vs curated agg055 at the question/category level to locate
+   where curated retrieval hurts.
 4. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 5. Keep fine-tuning/RL over negative examples as a later phase. The current
