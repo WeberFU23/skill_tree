@@ -32,6 +32,34 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
+def _json_safe(value):
+    """Convert numpy/container values into JSON-serializable values."""
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, np.floating):
+        return float(value)
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, dict):
+        return {str(k): _json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(v) for v in value]
+    return value
+
+
+def _prepend_negative_memory_context(prompt: str, negative_memories: List[str]) -> str:
+    negative_context = "\n\n".join(
+        f"{idx + 1}. {memory}" for idx, memory in enumerate(negative_memories)
+    )
+    return (
+        "Relevant negative memories from prior mistakes or corrections:\n"
+        f"{negative_context}\n\n"
+        "Use these as guardrails to avoid repeating known errors. "
+        "Do not expose hidden reasoning; answer directly.\n\n"
+        f"{prompt}"
+    )
+
+
 def load_dataset(data_file: str, dataset_type: str):
     """Load dataset"""
     with open(data_file, 'r') as f:
@@ -572,16 +600,24 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
             # print(retrieved_mems)
             # print(top_k_eval, len(retrieved_mems))
             prompt = trainer.evaluator.build_prompt(question, retrieved_mems, qa)
-            add_negative_context = getattr(trainer, "add_negative_memory_context_to_prompt", None)
-            if callable(add_negative_context):
-                prompt = add_negative_context(prompt, question)
+            negative_memories = []
+            retrieve_negative_memories = getattr(trainer, "retrieve_negative_memories", None)
+            if callable(retrieve_negative_memories):
+                negative_memories = list(retrieve_negative_memories(question))
+                if negative_memories:
+                    prompt = _prepend_negative_memory_context(prompt, negative_memories)
+            else:
+                add_negative_context = getattr(trainer, "add_negative_memory_context_to_prompt", None)
+                if callable(add_negative_context):
+                    prompt = add_negative_context(prompt, question)
             task_args.append((next_qid, prompt, eval_args))
             meta_by_qid[next_qid] = {
                 "qa": qa,
                 "qa_idx": qa_idx,
                 "sample_id": sample_id,
                 "retrieved_memories": retrieved_mems,
-                "retrieved_indices": list(retrieved_indices)
+                "retrieved_indices": list(retrieved_indices),
+                "negative_memories": negative_memories
             }
             next_qid += 1
 
@@ -597,6 +633,7 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
         "llm_judge": []
     }
     category_metrics = {}
+    query_records: Dict[int, Dict[str, Any]] = {}
 
     for qid, response, _, success in ret:
         meta = meta_by_qid.get(qid, {})
@@ -615,6 +652,21 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
         if category is not None:
             bucket = category_metrics.setdefault(category, {"f1": [], "llm_judge": []})
             bucket["f1"].append(f1)
+
+        query_records[qid] = {
+            "qid": qid,
+            "sample_id": meta.get("sample_id", ""),
+            "qa_idx": meta.get("qa_idx"),
+            "category": category,
+            "question": qa.get("question", ""),
+            "ground_truth": ground_truth,
+            "prediction": prediction,
+            "f1": float(f1),
+            "llm_judge": None,
+            "retrieved_memories": list(meta.get("retrieved_memories", [])),
+            "retrieved_indices": list(meta.get("retrieved_indices", [])),
+            "negative_memories": list(meta.get("negative_memories", [])),
+        }
 
     # LLM judge
     judge_task_args = []
@@ -649,9 +701,19 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
         category = qa.get("category")
         if category is not None and category in category_metrics:
             category_metrics[category]["llm_judge"].append(float(score))
+        if qid in query_records:
+            query_records[qid]["llm_judge"] = float(score)
 
     def _avg(values: List[float]) -> float:
         return float(np.mean(values)) if values else 0.0
+
+    category_summary = {}
+    for category, data in category_metrics.items():
+        category_summary[str(category)] = {
+            "f1": _avg(data["f1"]),
+            "llm_judge": _avg(data["llm_judge"]),
+            "count": len(data["f1"]),
+        }
 
     print("\n" + "=" * 80)
     print(f"{args.dataset} Evaluation (query-wise averages)")
@@ -670,7 +732,27 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
                 f"LLM Judge={_avg(data['llm_judge']):.4f}"
             )
 
-    return {}
+    output = {
+        "dataset": args.dataset,
+        "summary": {
+            "total_queries": len(metrics["f1"]),
+            "f1": _avg(metrics["f1"]),
+            "llm_judge": _avg(metrics["llm_judge"]),
+        },
+        "category_metrics": category_summary,
+        "results": [query_records[qid] for qid in sorted(query_records.keys())],
+    }
+
+    out_file = getattr(args, "out_file", None)
+    if out_file:
+        out_dir = os.path.dirname(out_file)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+        with open(out_file, "w", encoding="utf-8") as handle:
+            json.dump(_json_safe(output), handle, ensure_ascii=False, indent=2)
+        print(f"Saved detailed evaluation results to {out_file}")
+
+    return output
 
 
 def infer_text_dataset_memories(trainer: BaseTrainer, test_data, args):

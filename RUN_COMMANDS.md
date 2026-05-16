@@ -153,16 +153,25 @@ Raw-store conclusion: use negative memory, but limit retrieval to
 `NEGATIVE_MEMORY_TOP_K=2` before doing deeper quality filtering. The raw
 LoCoMo skill-tree train/eval scripts default to top-2 negative memories.
 
-## 3. Current Performance Path
+## 3. Current Performance and Analysis Path
 
 The designer ablation did not improve test performance because legacy
 `--enable-designer` refines the flat operation bank, while the active skill-tree
 path executes markdown nodes under `skills_memory/`. Its useful diagnosis was
 tested by strengthening `insert.md`, but the clean raw40 ablation still
-underperformed baseline. The current performance path is therefore curated
-negative-memory retrieval, not further broadening the insert skill prompt.
+underperformed baseline.
 
-Run the best-known curated aggregate evaluation:
+The 2026-05-16 repeat changed the current decision point: raw negative-memory
+top-2 is the stronger stable baseline, while curated aggregate memory remains an
+analysis path until its category-2/category-3 drop is explained.
+
+Run the current stable raw top-2 evaluation:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem.sh
+```
+
+Run the curated aggregate evaluation for comparison:
 
 ```bash
 bash scripts/eval_locomo_skilltree_negmem_curated_agg055.sh
@@ -184,7 +193,7 @@ Latest curated budget sweep on `curated_negative_memories_agg055`:
 | Case | F1 | LLM Judge | Readout |
 | --- | ---: | ---: | --- |
 | top1, 900 chars | 0.2230 | 0.3153 | strong, compact |
-| top1, 1200 chars | 0.2286 | 0.3312 | best current setting |
+| top1, 1200 chars | 0.2286 | 0.3312 | best single-run curated setting |
 | top1, 1800 chars | 0.1946 | 0.2914 | too verbose |
 | top2, 900 chars | 0.2040 | 0.2548 | extra retrieved lesson added noise |
 | top2, 1200 chars | 0.2018 | 0.2707 | below top1 |
@@ -192,9 +201,9 @@ Latest curated budget sweep on `curated_negative_memories_agg055`:
 | top3, 1200 chars | 0.2072 | 0.2850 | below top1 |
 | top3, 1800 chars | 0.2149 | 0.3105 | below top1 |
 
-Current curated default: `NEGATIVE_MEMORY_TOP_K=1` and
-`NEGATIVE_MEMORY_MAX_CHARS=1200`. This is now the best-known LoCoMo setting in
-the small development split.
+Current curated comparison setting: `NEGATIVE_MEMORY_TOP_K=1` and
+`NEGATIVE_MEMORY_MAX_CHARS=1200`. It remains useful for analysis, but the
+three-run repeat below makes raw top2 the current stable baseline.
 
 Because memory construction and LLM judging are not fully deterministic, repeat
 the current best setting before treating a single score as conclusive:
@@ -232,6 +241,22 @@ python -B scripts/compare_locomo_repeat_configs.py \
   --candidate curated_agg055_top1_chars1200
 ```
 
+New eval-only runs also save detailed per-question JSON to `OUT_FILE`. After
+rerunning the repeat script with this code, compare raw top2 and curated at the
+question level:
+
+```bash
+python -B scripts/compare_locomo_repeat_questions.py \
+  --summary-tsv results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/summary.tsv \
+  --baseline-config raw_top2 \
+  --candidate-config curated_agg055_top1_chars1200 \
+  --categories 2 3
+```
+
+This writes a TSV ranked by candidate-minus-baseline F1, including the question,
+gold answer, both predictions, QA-retrieved memories, and retrieved negative
+memories. Use it to inspect why curated loses category 2 and category 3.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
@@ -250,7 +275,7 @@ Category-wise readout from the same repeat:
 
 This repeat supersedes the single curated sweep high as the current decision
 point: keep curated aggregate memory as an analysis path, but use raw top2 as
-the stronger stable baseline until category-wise analysis explains the curated
+the stronger stable baseline until question-level analysis explains the curated
 drop. The largest curated losses are category 2 and category 3, so the next
 diagnostic should inspect which curated lessons were retrieved for those
 queries.
