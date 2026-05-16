@@ -631,22 +631,27 @@ class BaseTrainer:
         return deduped
 
     def retrieve_negative_memories(self, query: str,
-                                   top_k: Optional[int] = None) -> List[str]:
+                                   top_k: Optional[int] = None,
+                                   category=None) -> List[str]:
         """Retrieve markdown negative memories relevant to the current query."""
         if self.negative_memory_store is None:
             return []
         if top_k is None:
             top_k = getattr(self.config, 'negative_memory_top_k', 3)
+        required_tags = None
+        if getattr(self.config, 'negative_memory_match_category', False) and category is not None:
+            required_tags = [f"category_{category}"]
         return self.negative_memory_store.retrieve(
             query=query,
             top_k=top_k,
             scope_ids=self._get_skill_scope_ids(),
-            min_score=getattr(self.config, 'negative_memory_min_score', None)
+            min_score=getattr(self.config, 'negative_memory_min_score', None),
+            required_tags=required_tags
         )
 
-    def add_negative_memory_context_to_prompt(self, prompt: str, query: str) -> str:
+    def add_negative_memory_context_to_prompt(self, prompt: str, query: str, category=None) -> str:
         """Prepend relevant negative memories to an answer/evaluation prompt."""
-        negative_memories = self.retrieve_negative_memories(query)
+        negative_memories = self.retrieve_negative_memories(query, category=category)
         if not negative_memories:
             return prompt
         negative_context = "\n\n".join(
@@ -1490,7 +1495,11 @@ class BaseTrainer:
 
             # Build prompt using evaluator
             prompt = self.evaluator.build_prompt(question, retrieved_mems, qa)
-            prompt = self.add_negative_memory_context_to_prompt(prompt, question)
+            prompt = self.add_negative_memory_context_to_prompt(
+                prompt,
+                question,
+                category=qa.get('category', None)
+            )
             task_args.append((qa_idx, prompt, eval_args))
 
         # Call LLM in parallel

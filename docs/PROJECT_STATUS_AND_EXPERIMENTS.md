@@ -96,6 +96,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/curate_locomo_skilltree_negmem.sh` | Cluster raw negative memories into curated aggregate lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated.sh` | Evaluate curated negative-memory directory |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh` | Test curated aggregate retrieval with QA-time category matching |
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
@@ -185,8 +186,8 @@ and memory construction also introduce run-to-run variance.
 ## Recommended Next Experiments
 
 1. Rerun the core repeat with the detailed-output code, then compare raw top2 vs
-   curated agg055 at the query level to locate why curated hurts category 2 and
-   category 3:
+   curated agg055 at the query level to locate why curated helps or hurts each
+   category:
 
    ```bash
    REPEATS=3 bash scripts/repeat_locomo_skilltree_core_configs.sh
@@ -198,11 +199,17 @@ and memory construction also introduce run-to-run variance.
    ```
 2. Inspect curated aggregate markdown files manually and remove misleading or
    test-leaking lessons if any appear.
-3. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
+3. Run the category-matched curated ablation to test whether the observed
+   cross-category retrieval is causing wrong dates/entities:
+
+   ```bash
+   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh
+   ```
+4. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
    accepting future curated changes.
-4. Run on a larger split or another long-memory benchmark after the small
+5. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-5. Keep fine-tuning/RL over negative examples as a later phase. The current
+6. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

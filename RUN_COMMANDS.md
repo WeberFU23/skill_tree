@@ -177,6 +177,18 @@ Run the curated aggregate evaluation for comparison:
 bash scripts/eval_locomo_skilltree_negmem_curated_agg055.sh
 ```
 
+To test whether curated negative memories are hurting by crossing LoCoMo QA
+categories, run the category-matched ablation:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh
+```
+
+This passes `--negative-memory-match-category`, so QA evaluation only retrieves
+negative memories tagged with the current question category, for example
+`category_2` lessons for category-2 questions. Memory construction still uses
+the normal query-only retrieval because chunks do not have QA categories.
+
 Then sweep curated negative-memory prompt budget:
 
 ```bash

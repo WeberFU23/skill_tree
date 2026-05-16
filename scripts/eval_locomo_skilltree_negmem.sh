@@ -18,6 +18,9 @@ NEGATIVE_MEMORY_ARGS=()
 if [[ -n "${NEGATIVE_MEMORY_MIN_SCORE:-}" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-min-score "$NEGATIVE_MEMORY_MIN_SCORE")
 fi
+if [[ "${NEGATIVE_MEMORY_MATCH_CATEGORY:-0}" == "1" ]]; then
+    NEGATIVE_MEMORY_ARGS+=(--negative-memory-match-category)
+fi
 
 python -B main.py \
     --disable-flash-attn \

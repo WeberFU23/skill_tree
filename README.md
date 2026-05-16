@@ -15,6 +15,7 @@ failure patterns.
 - Markdown negative memory store under `negative_memories/`
 - Automatic training-failure recording as negative memories
 - Curated negative-memory clustering and aggregation workflow
+- Optional QA-time category matching for negative-memory retrieval
 - Hard-case-driven skill-tree evolution during training
 - Detailed per-question LoCoMo eval JSON for error analysis
 - Standardized experiment scripts under `scripts/`

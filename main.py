@@ -603,13 +603,22 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
             negative_memories = []
             retrieve_negative_memories = getattr(trainer, "retrieve_negative_memories", None)
             if callable(retrieve_negative_memories):
-                negative_memories = list(retrieve_negative_memories(question))
+                negative_memories = list(
+                    retrieve_negative_memories(
+                        question,
+                        category=qa.get("category", None)
+                    )
+                )
                 if negative_memories:
                     prompt = _prepend_negative_memory_context(prompt, negative_memories)
             else:
                 add_negative_context = getattr(trainer, "add_negative_memory_context_to_prompt", None)
                 if callable(add_negative_context):
-                    prompt = add_negative_context(prompt, question)
+                    prompt = add_negative_context(
+                        prompt,
+                        question,
+                        category=qa.get("category", None)
+                    )
             task_args.append((next_qid, prompt, eval_args))
             meta_by_qid[next_qid] = {
                 "qa": qa,

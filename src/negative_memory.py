@@ -145,11 +145,24 @@ class NegativeMemoryStore:
 
     def retrieve(self, query: str, top_k: int = 3,
                  scope_ids: Optional[Iterable[str]] = None,
-                 min_score: Optional[float] = None) -> List[str]:
+                 min_score: Optional[float] = None,
+                 required_tags: Optional[Iterable[str]] = None) -> List[str]:
         if top_k is None or int(top_k) <= 0:
             return []
         with self._lock:
             visible = [entry for entry in self.entries if entry.is_visible(scope_ids)]
+            required_tag_set = {
+                str(tag).strip().lower()
+                for tag in (required_tags or [])
+                if str(tag).strip()
+            }
+            if required_tag_set:
+                visible = [
+                    entry for entry in visible
+                    if required_tag_set.issubset(
+                        {str(tag).strip().lower() for tag in entry.tags}
+                    )
+                ]
             if not visible:
                 return []
 
