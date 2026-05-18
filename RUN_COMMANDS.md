@@ -209,6 +209,19 @@ If the single run is promising, repeat the selective policy:
 REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh
 ```
 
+The category-2/3 repeat shows most of the useful signal in category 3, while
+category 2 remains weak. To isolate that signal, run category-3 matching only:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055_cat3match.sh
+```
+
+If the single run is promising, repeat it:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat3match.sh
+```
+
 Latest all-category catmatch single run:
 
 | Config | F1 | LLM Judge | Readout |
@@ -221,6 +234,15 @@ Latest category-2/3 selective repeat on 2026-05-18:
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
 | --- | ---: | ---: | --- |
 | curated agg055 top1/1200 + category 2/3 match only | 0.2105 +/- 0.0185 | 0.2983 +/- 0.0314 | strong Judge, but F1 does not clearly beat ordinary curated repeat |
+
+Category readout for that repeat:
+
+| Config | Cat 1 F1 / Judge | Cat 2 F1 / Judge | Cat 3 F1 / Judge | Cat 4 F1 / Judge |
+| --- | ---: | ---: | ---: | ---: |
+| curated agg055 top1/1200 + category 2/3 match only | 0.1449 / 0.2416 | 0.1746 / 0.1308 | 0.5129 / 0.5667 | 0.2156 / 0.3573 |
+
+The category table suggests category 2 is not the source of the gain. Category
+3 remains the clearest target for the next selective-matching ablation.
 
 To summarize categories for a selective repeat:
 

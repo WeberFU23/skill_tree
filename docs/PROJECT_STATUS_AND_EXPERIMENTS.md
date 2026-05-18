@@ -98,8 +98,10 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh` | Test curated aggregate retrieval with QA-time category matching |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_cat23match.sh` | Test curated aggregate retrieval with category matching only for category 2 and 3 |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055_cat3match.sh` | Test curated aggregate retrieval with category matching only for category 3 |
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
 | `scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh` | Repeat the selective category-2/3 matched curated aggregate setting |
+| `scripts/repeat_locomo_skilltree_curated_agg055_cat3match.sh` | Repeat the selective category-3 matched curated aggregate setting |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
@@ -141,6 +143,7 @@ and memory construction also introduce run-to-run variance.
 | Curated category-match ablation | Test whether cross-category negative memories cause wrong dates/entities | all categories matched to same-tag negative memories | 0.2014 | 0.2580 | Category 2 and 3 remained strong, but category 1 and 4 dropped; selective matching is the next ablation |
 | Curated selective category-match ablation | Match negative memories only for category 2 and 3 | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2188 | 0.3089 | Restored overall score near curated baseline and improved Judge; category 3 was strongest, category 2 still needs repeat validation |
 | Curated selective category-match repeat | Repeat selective category-2/3 matching | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2105 +/- 0.0185 | 0.2983 +/- 0.0314 | Strong Judge but not a clear F1 improvement over ordinary curated repeat; keep as analysis path |
+| Curated selective category-match category summary | Diagnose which categories benefit from category-2/3 matching | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1449 / 0.1746 / 0.5129 / 0.2156 | 0.2416 / 0.1308 / 0.5667 / 0.3573 | Category 3 is the clearest signal; category 2 is weak, so test category-3-only matching next |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -199,6 +202,10 @@ and memory construction also introduce run-to-run variance.
     Judge 0.2983 +/- 0.0314. This is useful for analysis and improves over
     all-category matching, but it does not clearly beat ordinary curated
     retrieval on F1.
+17. The category-wise repeat summary for category-2/3 matching is Cat1
+    0.1449/0.2416, Cat2 0.1746/0.1308, Cat3 0.5129/0.5667, and Cat4
+    0.2156/0.3573 for F1/Judge. Category 2 did not justify being in the
+    selective match set; category 3 is the cleaner next ablation.
 
 ## Recommended Next Experiments
 
@@ -233,11 +240,18 @@ and memory construction also introduce run-to-run variance.
    ```bash
    REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh
    ```
-6. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
+6. Run category-3-only matching to test whether it keeps the useful selective
+   signal while avoiding category-2 noise:
+
+   ```bash
+   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_cat3match.sh
+   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat3match.sh
+   ```
+7. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
    accepting future curated changes.
-7. Run on a larger split or another long-memory benchmark after the small
+8. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-8. Keep fine-tuning/RL over negative examples as a later phase. The current
+9. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 
