@@ -214,6 +214,7 @@ Latest all-category catmatch single run:
 | Config | F1 | LLM Judge | Readout |
 | --- | ---: | ---: | --- |
 | curated agg055 top1/1200 + all-category match | 0.2014 | 0.2580 | category 2/3 stayed strong, but category 1/4 dropped |
+| curated agg055 top1/1200 + category 2/3 match only | 0.2188 | 0.3089 | stronger single-run result; repeat before promoting |
 
 Then sweep curated negative-memory prompt budget:
 
