@@ -97,7 +97,9 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/eval_locomo_skilltree_negmem_curated.sh` | Evaluate curated negative-memory directory |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055.sh` | Run the best-known curated aggregate evaluation setting, defaulting to top-1 and 1200 chars |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh` | Test curated aggregate retrieval with QA-time category matching |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055_cat23match.sh` | Test curated aggregate retrieval with category matching only for category 2 and 3 |
 | `scripts/repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the best-known curated aggregate setting and report mean/std |
+| `scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh` | Repeat the selective category-2/3 matched curated aggregate setting |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
@@ -136,6 +138,7 @@ and memory construction also introduce run-to-run variance.
 | Core-config category summary | Diagnose where raw top2 beats curated agg055 | Category 2 F1 mean: raw top2 vs curated | 0.2102 vs 0.1358 | 0.1359 vs 0.1180 | Curated lost much of raw top2's category-2 gain |
 | Core-config category summary | Diagnose where raw top2 beats curated agg055 | Category 3 F1 mean: raw top2 vs curated | 0.5576 vs 0.4747 | 0.6500 vs 0.5333 | Curated also lost the largest category-3 gain |
 | Core-config category comparison | Quantify curated-minus-raw deltas by category | Categories 1/2/3/4 | -0.0057 / -0.0744 / -0.0829 / -0.0272 F1 | -0.0169 / -0.0179 / -0.1167 / -0.0021 Judge | Curated lost to raw in every category; category 2 and 3 are the priority diagnostics |
+| Curated category-match ablation | Test whether cross-category negative memories cause wrong dates/entities | all categories matched to same-tag negative memories | 0.2014 | 0.2580 | Category 2 and 3 remained strong, but category 1 and 4 dropped; selective matching is the next ablation |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -182,6 +185,10 @@ and memory construction also introduce run-to-run variance.
     question, gold answer, prediction, F1, LLM Judge score, retrieved QA
     memories, and retrieved negative-memory guardrails. This makes the next
     optimization loop inspectable instead of relying only on log averages.
+14. Full category matching for curated negative memories is too blunt. The
+    2026-05-17 single run scored F1 0.2014 and LLM Judge 0.2580: category 2/3
+    were competitive, but category 1/4 dropped. This motivates matching only
+    category 2 and 3.
 
 ## Recommended Next Experiments
 
@@ -205,11 +212,22 @@ and memory construction also introduce run-to-run variance.
    ```bash
    bash scripts/eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh
    ```
-4. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
+4. If all-category matching helps category 2/3 but hurts category 1/4, run the
+   selective category-2/3 ablation:
+
+   ```bash
+   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_cat23match.sh
+   ```
+5. If the selective run is promising, repeat it:
+
+   ```bash
+   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh
+   ```
+6. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
    accepting future curated changes.
-5. Run on a larger split or another long-memory benchmark after the small
+7. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-6. Keep fine-tuning/RL over negative examples as a later phase. The current
+8. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

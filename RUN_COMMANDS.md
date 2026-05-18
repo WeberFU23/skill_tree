@@ -189,6 +189,32 @@ negative memories tagged with the current question category, for example
 `category_2` lessons for category-2 questions. Memory construction still uses
 the normal query-only retrieval because chunks do not have QA categories.
 
+The single catmatch run improved category 2/3 but hurt category 1/4. To test
+the narrower policy suggested by that result, match only category 2 and 3:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055_cat23match.sh
+```
+
+Equivalent generic form:
+
+```bash
+NEGATIVE_MEMORY_MATCH_CATEGORIES="2 3" \
+  bash scripts/eval_locomo_skilltree_negmem_curated_agg055.sh
+```
+
+If the single run is promising, repeat the selective policy:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh
+```
+
+Latest all-category catmatch single run:
+
+| Config | F1 | LLM Judge | Readout |
+| --- | ---: | ---: | --- |
+| curated agg055 top1/1200 + all-category match | 0.2014 | 0.2580 | category 2/3 stayed strong, but category 1/4 dropped |
+
 Then sweep curated negative-memory prompt budget:
 
 ```bash

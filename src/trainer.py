@@ -630,6 +630,20 @@ class BaseTrainer:
                 deduped.append(scope)
         return deduped
 
+    def _should_match_negative_memory_category(self, category) -> bool:
+        """Return whether negative-memory retrieval should be restricted by QA category."""
+        if category is None:
+            return False
+        if getattr(self.config, 'negative_memory_match_category', False):
+            return True
+        match_categories = getattr(self.config, 'negative_memory_match_categories', None)
+        if not match_categories:
+            return False
+        if isinstance(match_categories, str):
+            match_categories = [part for part in re.split(r"[,\s]+", match_categories) if part]
+        category_text = str(category).strip()
+        return category_text in {str(value).strip() for value in match_categories}
+
     def retrieve_negative_memories(self, query: str,
                                    top_k: Optional[int] = None,
                                    category=None) -> List[str]:
@@ -639,7 +653,7 @@ class BaseTrainer:
         if top_k is None:
             top_k = getattr(self.config, 'negative_memory_top_k', 3)
         required_tags = None
-        if getattr(self.config, 'negative_memory_match_category', False) and category is not None:
+        if self._should_match_negative_memory_category(category):
             required_tags = [f"category_{category}"]
         return self.negative_memory_store.retrieve(
             query=query,

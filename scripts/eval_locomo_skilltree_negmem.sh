@@ -21,6 +21,10 @@ fi
 if [[ "${NEGATIVE_MEMORY_MATCH_CATEGORY:-0}" == "1" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-match-category)
 fi
+if [[ -n "${NEGATIVE_MEMORY_MATCH_CATEGORIES:-}" ]]; then
+    read -r -a MATCH_CATEGORIES <<< "$NEGATIVE_MEMORY_MATCH_CATEGORIES"
+    NEGATIVE_MEMORY_ARGS+=(--negative-memory-match-categories "${MATCH_CATEGORIES[@]}")
+fi
 
 python -B main.py \
     --disable-flash-attn \

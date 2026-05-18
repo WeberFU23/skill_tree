@@ -106,6 +106,7 @@ class AgenticMemoryConfig:
         self.negative_memory_max_chars = 1200
         self.negative_memory_min_score = None
         self.negative_memory_match_category = False
+        self.negative_memory_match_categories = None
         self.auto_record_negative_memory = False
         self.negative_memory_write_limit = 20
         self.negative_memory_f1_threshold = None
@@ -391,6 +392,8 @@ def get_agentic_memory_args():
                         help='Drop retrieved negative memories below this similarity score')
     parser.add_argument('--negative-memory-match-category', action='store_true',
                         help='During QA evaluation, retrieve only negative memories tagged with the QA category')
+    parser.add_argument('--negative-memory-match-categories', type=str, nargs='*', default=None,
+                        help='Only match negative memory category tags for these QA categories, e.g. 2 3')
     parser.add_argument('--auto-record-negative-memory', action='store_true',
                         help='During training, persist compact negative memories for QA failures')
     parser.add_argument('--negative-memory-write-limit', type=int, default=20,
