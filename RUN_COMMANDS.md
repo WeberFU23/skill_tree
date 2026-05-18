@@ -372,6 +372,28 @@ candidate lessons to inspect, rewrite, or filter from retrieval. The companion
 `*_negative_memory_examples.tsv` file keeps concrete loss/win examples for each
 lesson.
 
+The 2026-05-18 question-level impact summary for raw top2 vs curated agg055
+found three negative-mean curated aggregate lessons:
+
+| Memory key | Rows | Wins | Losses | Mean delta F1 | Readout |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `curated auto failure locomo conv-42 37` | 24 | 6 | 9 | -0.1115 | strongest negative candidate |
+| `curated auto failure locomo conv-42 43` | 9 | 1 | 3 | -0.0923 | small but consistently harmful sample |
+| `curated auto failure locomo conv-42 9` | 15 | 2 | 6 | -0.0451 | moderate negative candidate |
+
+To test whether removing these lessons improves curated retrieval, build the
+pruned directory and run the pruned eval:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh
+```
+
+If the single run improves over ordinary curated agg055, repeat it:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |

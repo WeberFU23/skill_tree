@@ -107,6 +107,9 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/summarize_negative_memory_question_impacts.py` | Group question-level wins/losses by retrieved negative-memory lesson |
+| `scripts/prune_curated_negative_memories.py` | Copy a curated negative-memory directory while excluding selected harmful lessons |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh` | Evaluate curated agg055 after pruning the three negative-mean lessons from question-level diagnostics |
+| `scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh` | Repeat the pruned curated agg055 setting |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -214,6 +217,11 @@ and memory construction also introduce run-to-run variance.
     to 0.5620/0.5750, but category 4 fell to 0.1990/0.3281, canceling the
     benefit. Selective category matching should remain diagnostic rather than
     a promoted default.
+19. Question-level negative-memory impact analysis identified three
+    negative-mean curated aggregate lessons: `conv-42 37` (-0.1115 F1),
+    `conv-42 43` (-0.0923 F1), and `conv-42 9` (-0.0451 F1). The next
+    controlled experiment is a pruned curated directory that removes only these
+    three lessons.
 
 ## Recommended Next Experiments
 
@@ -257,9 +265,15 @@ and memory construction also introduce run-to-run variance.
    python -B scripts/summarize_negative_memory_question_impacts.py \
      results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/question_compare_curated_agg055_top1_chars1200_vs_raw_top2.tsv
    ```
-8. Run on a larger split or another long-memory benchmark after the small
+8. Test the pruned curated directory built from the question-level diagnostic:
+
+   ```bash
+   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh
+   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh
+   ```
+9. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-9. Keep fine-tuning/RL over negative examples as a later phase. The current
+10. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 
