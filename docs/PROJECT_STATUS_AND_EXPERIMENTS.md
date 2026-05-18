@@ -106,6 +106,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
+| `scripts/summarize_negative_memory_question_impacts.py` | Group question-level wins/losses by retrieved negative-memory lesson |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -249,9 +250,16 @@ and memory construction also introduce run-to-run variance.
    ```
 6. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
    accepting future curated changes.
-7. Run on a larger split or another long-memory benchmark after the small
+7. Summarize question-level comparisons by retrieved negative-memory lesson
+   before editing curated memory files:
+
+   ```bash
+   python -B scripts/summarize_negative_memory_question_impacts.py \
+     results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/question_compare_curated_agg055_top1_chars1200_vs_raw_top2.tsv
+   ```
+8. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-8. Keep fine-tuning/RL over negative examples as a later phase. The current
+9. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

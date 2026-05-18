@@ -356,6 +356,22 @@ This writes a TSV ranked by candidate-minus-baseline F1, including the question,
 gold answer, both predictions, QA-retrieved memories, and retrieved negative
 memories. Use it to inspect why curated loses category 2 and category 3.
 
+After creating a question comparison TSV, summarize which retrieved negative
+memories are associated with candidate wins and losses:
+
+```bash
+python -B scripts/summarize_negative_memory_question_impacts.py \
+  results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/question_compare_curated_agg055_top1_chars1200_vs_raw_top2.tsv
+
+column -t -s $'\t' \
+  results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/question_compare_curated_agg055_top1_chars1200_vs_raw_top2_negative_memory_summary.tsv
+```
+
+The summary ranks lessons by mean F1 delta. Negative rows are the first
+candidate lessons to inspect, rewrite, or filter from retrieval. The companion
+`*_negative_memory_examples.tsv` file keeps concrete loss/win examples for each
+lesson.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
