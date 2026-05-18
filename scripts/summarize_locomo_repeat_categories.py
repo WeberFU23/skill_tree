@@ -83,10 +83,16 @@ def main() -> int:
         default=None,
         help="Output TSV path. Defaults to category_summary.tsv next to summary_tsv.",
     )
+    parser.add_argument(
+        "--config-name",
+        default=None,
+        help="Fallback config name for repeat summaries that do not include a config column.",
+    )
     args = parser.parse_args()
 
     summary_path = args.summary_tsv
     out_path = args.out or summary_path.with_name("category_summary.tsv")
+    fallback_config = args.config_name or summary_path.parent.name
 
     rows = []
     with summary_path.open("r", encoding="utf-8", newline="") as handle:
@@ -98,7 +104,7 @@ def main() -> int:
     grouped: Dict[Tuple[str, str], List[Tuple[float, float]]] = defaultdict(list)
 
     for row in rows:
-        config = row.get("config", "")
+        config = row.get("config", "") or fallback_config
         run_id = row.get("run", "")
         log_value = row.get("log", "")
         if not config or not log_value:

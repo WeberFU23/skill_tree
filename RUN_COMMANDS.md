@@ -216,6 +216,20 @@ Latest all-category catmatch single run:
 | curated agg055 top1/1200 + all-category match | 0.2014 | 0.2580 | category 2/3 stayed strong, but category 1/4 dropped |
 | curated agg055 top1/1200 + category 2/3 match only | 0.2188 | 0.3089 | stronger single-run result; repeat before promoting |
 
+Latest category-2/3 selective repeat on 2026-05-18:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| curated agg055 top1/1200 + category 2/3 match only | 0.2105 +/- 0.0185 | 0.2983 +/- 0.0314 | strong Judge, but F1 does not clearly beat ordinary curated repeat |
+
+To summarize categories for a selective repeat:
+
+```bash
+python -B scripts/summarize_locomo_repeat_categories.py \
+  results/repeat_locomo_skilltree_curated_agg055_cat23match_YYYYMMDD_HHMMSS/summary.tsv \
+  --config-name curated_agg055_cat23match_top1_chars1200
+```
+
 Then sweep curated negative-memory prompt budget:
 
 ```bash

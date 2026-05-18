@@ -140,6 +140,7 @@ and memory construction also introduce run-to-run variance.
 | Core-config category comparison | Quantify curated-minus-raw deltas by category | Categories 1/2/3/4 | -0.0057 / -0.0744 / -0.0829 / -0.0272 F1 | -0.0169 / -0.0179 / -0.1167 / -0.0021 Judge | Curated lost to raw in every category; category 2 and 3 are the priority diagnostics |
 | Curated category-match ablation | Test whether cross-category negative memories cause wrong dates/entities | all categories matched to same-tag negative memories | 0.2014 | 0.2580 | Category 2 and 3 remained strong, but category 1 and 4 dropped; selective matching is the next ablation |
 | Curated selective category-match ablation | Match negative memories only for category 2 and 3 | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2188 | 0.3089 | Restored overall score near curated baseline and improved Judge; category 3 was strongest, category 2 still needs repeat validation |
+| Curated selective category-match repeat | Repeat selective category-2/3 matching | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2105 +/- 0.0185 | 0.2983 +/- 0.0314 | Strong Judge but not a clear F1 improvement over ordinary curated repeat; keep as analysis path |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -194,6 +195,10 @@ and memory construction also introduce run-to-run variance.
     F1 0.2188 and LLM Judge 0.3089. It preserved strong category-3 performance
     and recovered category-4 Judge relative to all-category matching, but it
     still needs repeat validation before becoming a default.
+16. The selective category-2/3 repeat averaged F1 0.2105 +/- 0.0185 and LLM
+    Judge 0.2983 +/- 0.0314. This is useful for analysis and improves over
+    all-category matching, but it does not clearly beat ordinary curated
+    retrieval on F1.
 
 ## Recommended Next Experiments
 

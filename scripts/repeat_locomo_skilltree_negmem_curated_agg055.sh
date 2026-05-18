@@ -11,12 +11,13 @@ REPEATS="${REPEATS:-3}"
 NEGATIVE_MEMORY_DIR="${NEGATIVE_MEMORY_DIR:-./curated_negative_memories_agg055}"
 NEGATIVE_MEMORY_TOP_K="${NEGATIVE_MEMORY_TOP_K:-1}"
 NEGATIVE_MEMORY_MAX_CHARS="${NEGATIVE_MEMORY_MAX_CHARS:-1200}"
+CONFIG_NAME="${CONFIG_NAME:-curated_agg055_top${NEGATIVE_MEMORY_TOP_K}_chars${NEGATIVE_MEMORY_MAX_CHARS}}"
 REPEAT_DIR="${REPEAT_DIR:-./results/repeat_locomo_skilltree_curated_agg055_$(date +%Y%m%d_%H%M%S)}"
 
 mkdir -p "$REPEAT_DIR/logs"
 
 SUMMARY_FILE="$REPEAT_DIR/summary.tsv"
-printf "run\tnegative_dir\tnegative_top_k\tnegative_max_chars\tf1\tllm_judge\tlog\n" > "$SUMMARY_FILE"
+printf "config\trun\tnegative_dir\tnegative_top_k\tnegative_max_chars\tf1\tllm_judge\tlog\tout_file\n" > "$SUMMARY_FILE"
 
 extract_metric() {
     local label="$1"
@@ -27,18 +28,20 @@ extract_metric() {
 record_summary() {
     local run_id="$1"
     local log_file="$2"
+    local out_file="$3"
     local f1
     local judge
     f1="$(extract_metric "F1" "$log_file")"
     judge="$(extract_metric "LLM Judge" "$log_file")"
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-        "$run_id" "$NEGATIVE_MEMORY_DIR" "$NEGATIVE_MEMORY_TOP_K" "$NEGATIVE_MEMORY_MAX_CHARS" \
-        "${f1:-NA}" "${judge:-NA}" "$log_file" | tee -a "$SUMMARY_FILE"
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "$CONFIG_NAME" "$run_id" "$NEGATIVE_MEMORY_DIR" "$NEGATIVE_MEMORY_TOP_K" "$NEGATIVE_MEMORY_MAX_CHARS" \
+        "${f1:-NA}" "${judge:-NA}" "$log_file" "$out_file" | tee -a "$SUMMARY_FILE"
 }
 
 for run_id in $(seq 1 "$REPEATS"); do
-    name="curated_agg055_top${NEGATIVE_MEMORY_TOP_K}_chars${NEGATIVE_MEMORY_MAX_CHARS}_r${run_id}"
+    name="${CONFIG_NAME}_r${run_id}"
     log_file="$REPEAT_DIR/logs/${name}.log"
+    out_file="$REPEAT_DIR/${name}.json"
 
     echo
     echo "================================================================================"
@@ -51,11 +54,11 @@ for run_id in $(seq 1 "$REPEATS"); do
     NEGATIVE_MEMORY_TOP_K="$NEGATIVE_MEMORY_TOP_K" \
     NEGATIVE_MEMORY_MAX_CHARS="$NEGATIVE_MEMORY_MAX_CHARS" \
     MEMORY_CACHE_SUFFIX="repeat_${name}" \
-    OUT_FILE="$REPEAT_DIR/${name}.json" \
+    OUT_FILE="$out_file" \
     WANDB_RUN_NAME="locomo-repeat-${name}" \
         bash "$SCRIPT_DIR/eval_locomo_skilltree_negmem_curated_agg055.sh" 2>&1 | tee "$log_file"
 
-    record_summary "$run_id" "$log_file"
+    record_summary "$run_id" "$log_file" "$out_file"
 done
 
 echo
@@ -65,12 +68,12 @@ echo "==========================================================================
 column -t -s $'\t' "$SUMMARY_FILE" || cat "$SUMMARY_FILE"
 
 awk -F '\t' '
-NR > 1 && $5 != "NA" && $6 != "NA" {
+NR > 1 && $6 != "NA" && $7 != "NA" {
     n += 1
-    f1 += $5
-    f1_sq += $5 * $5
-    judge += $6
-    judge_sq += $6 * $6
+    f1 += $6
+    f1_sq += $6 * $6
+    judge += $7
+    judge_sq += $7 * $7
 }
 END {
     if (n == 0) {
