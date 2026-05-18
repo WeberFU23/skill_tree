@@ -144,6 +144,8 @@ and memory construction also introduce run-to-run variance.
 | Curated selective category-match ablation | Match negative memories only for category 2 and 3 | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2188 | 0.3089 | Restored overall score near curated baseline and improved Judge; category 3 was strongest, category 2 still needs repeat validation |
 | Curated selective category-match repeat | Repeat selective category-2/3 matching | `curated_negative_memories_agg055`, top1, 1200 chars, match categories 2/3 only | 0.2105 +/- 0.0185 | 0.2983 +/- 0.0314 | Strong Judge but not a clear F1 improvement over ordinary curated repeat; keep as analysis path |
 | Curated selective category-match category summary | Diagnose which categories benefit from category-2/3 matching | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1449 / 0.1746 / 0.5129 / 0.2156 | 0.2416 / 0.1308 / 0.5667 / 0.3573 | Category 3 is the clearest signal; category 2 is weak, so test category-3-only matching next |
+| Curated category-3-only match repeat | Test whether only matching category 3 keeps the useful signal | `curated_negative_memories_agg055`, top1, 1200 chars, match category 3 only | 0.2100 +/- 0.0198 | 0.2930 +/- 0.0228 | Similar F1 to category-2/3 matching but lower Judge; not a stronger default |
+| Curated category-3-only category summary | Diagnose category-3-only repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1460 / 0.1966 / 0.5620 / 0.1990 | 0.2415 / 0.1744 / 0.5750 / 0.3281 | Category 3 improved, but category 4 dropped enough that overall performance did not improve |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -206,6 +208,11 @@ and memory construction also introduce run-to-run variance.
     0.1449/0.2416, Cat2 0.1746/0.1308, Cat3 0.5129/0.5667, and Cat4
     0.2156/0.3573 for F1/Judge. Category 2 did not justify being in the
     selective match set; category 3 is the cleaner next ablation.
+18. Category-3-only matching did not beat category-2/3 matching. It averaged F1
+    0.2100 +/- 0.0198 and LLM Judge 0.2930 +/- 0.0228. Category 3 improved
+    to 0.5620/0.5750, but category 4 fell to 0.1990/0.3281, canceling the
+    benefit. Selective category matching should remain diagnostic rather than
+    a promoted default.
 
 ## Recommended Next Experiments
 
@@ -240,18 +247,11 @@ and memory construction also introduce run-to-run variance.
    ```bash
    REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh
    ```
-6. Run category-3-only matching to test whether it keeps the useful selective
-   signal while avoiding category-2 noise:
-
-   ```bash
-   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_cat3match.sh
-   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_cat3match.sh
-   ```
-7. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
+6. Use `scripts/compare_locomo_repeat_configs.py` on repeat summaries before
    accepting future curated changes.
-8. Run on a larger split or another long-memory benchmark after the small
+7. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-9. Keep fine-tuning/RL over negative examples as a later phase. The current
+8. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

@@ -244,12 +244,36 @@ Category readout for that repeat:
 The category table suggests category 2 is not the source of the gain. Category
 3 remains the clearest target for the next selective-matching ablation.
 
+Latest category-3-only selective repeat on 2026-05-18:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| curated agg055 top1/1200 + category 3 match only | 0.2100 +/- 0.0198 | 0.2930 +/- 0.0228 | similar F1 to category-2/3 matching but lower Judge; not a better default |
+
+Category readout from the category-3-only repeat:
+
+| Config | Cat 1 F1 / Judge | Cat 2 F1 / Judge | Cat 3 F1 / Judge | Cat 4 F1 / Judge |
+| --- | ---: | ---: | ---: | ---: |
+| curated agg055 top1/1200 + category 3 match only | 0.1460 / 0.2415 | 0.1966 / 0.1744 | 0.5620 / 0.5750 | 0.1990 / 0.3281 |
+
+Category-3-only matching improves category 3 relative to category-2/3 matching,
+but the overall gain is canceled by category 4 and run variance. Keep selective
+category matching as a diagnostic path, not as the stable default.
+
 To summarize categories for a selective repeat:
 
 ```bash
 python -B scripts/summarize_locomo_repeat_categories.py \
   results/repeat_locomo_skilltree_curated_agg055_cat23match_YYYYMMDD_HHMMSS/summary.tsv \
   --config-name curated_agg055_cat23match_top1_chars1200
+```
+
+For category-3-only repeats, use:
+
+```bash
+python -B scripts/summarize_locomo_repeat_categories.py \
+  results/repeat_locomo_skilltree_curated_agg055_cat3match_YYYYMMDD_HHMMSS/summary.tsv \
+  --config-name curated_agg055_cat3match_top1_chars1200
 ```
 
 Then sweep curated negative-memory prompt budget:
