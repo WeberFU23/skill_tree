@@ -394,6 +394,33 @@ If the single run improves over ordinary curated agg055, repeat it:
 REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh
 ```
 
+Latest pruned repeat on 2026-05-18/19:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| curated agg055 pruned bad3 top1/1200 | 0.2309 +/- 0.0169 | 0.3095 +/- 0.0106 | strongest current curated candidate; beats raw top2 on mean F1 and Judge, but still has Cat2 Judge weakness |
+
+Category-wise readout for pruned bad3:
+
+| Config | Cat 1 F1 / Judge | Cat 2 F1 / Judge | Cat 3 F1 / Judge | Cat 4 F1 / Judge |
+| --- | ---: | ---: | ---: | ---: |
+| curated agg055 pruned bad3 top1/1200 | 0.1801 / 0.2874 | 0.2037 / 0.1154 | 0.5422 / 0.6167 | 0.2249 / 0.3594 |
+
+Compared with the documented raw-top2 category repeat, pruned bad3 improves
+category 1 and 4, is close on category 3, and remains weaker on category 2
+Judge. The next diagnostic should compare pruned bad3 against raw top2 at the
+question level:
+
+```bash
+python -B scripts/compare_locomo_repeat_questions.py \
+  --summary-tsv \
+    results/repeat_locomo_skilltree_core_configs_YYYYMMDD_HHMMSS/summary.tsv \
+    results/repeat_locomo_skilltree_curated_agg055_pruned_bad3_YYYYMMDD_HHMMSS/summary.tsv \
+  --baseline-config raw_top2 \
+  --candidate-config curated_agg055_pruned_bad3_top1_chars1200 \
+  --categories 2
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |

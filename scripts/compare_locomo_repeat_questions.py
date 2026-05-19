@@ -214,18 +214,19 @@ def compare_pair(
 
 
 def read_summary_pairs(
-    summary_tsv: Path,
+    summary_tsvs: Sequence[Path],
     baseline_config: str,
     candidate_config: str,
 ) -> List[Tuple[str, Path, Path]]:
     rows: Dict[Tuple[str, str], Dict[str, str]] = {}
-    with summary_tsv.open("r", encoding="utf-8", newline="") as handle:
-        reader = csv.DictReader(handle, delimiter="\t")
-        for row in reader:
-            config = row.get("config", "")
-            run = row.get("run", "")
-            if config and run:
-                rows[(config, run)] = row
+    for summary_tsv in summary_tsvs:
+        with summary_tsv.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle, delimiter="\t")
+            for row in reader:
+                config = row.get("config", "")
+                run = row.get("run", "")
+                if config and run:
+                    rows[(config, run)] = row
 
     pairs: List[Tuple[str, Path, Path]] = []
     runs = sorted(
@@ -275,7 +276,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", type=Path, help="Baseline detailed eval JSON")
     parser.add_argument("--candidate", type=Path, help="Candidate detailed eval JSON")
-    parser.add_argument("--summary-tsv", type=Path, help="Repeat summary.tsv with out_file paths")
+    parser.add_argument("--summary-tsv", type=Path, nargs="+", help="One or more repeat summary.tsv files with out_file paths")
     parser.add_argument("--baseline-config", default="raw_top2")
     parser.add_argument("--candidate-config", default="curated_agg055_top1_chars1200")
     parser.add_argument("--categories", nargs="*", default=None)
@@ -298,7 +299,8 @@ def main() -> int:
                 max_context_items=args.max_context_items,
                 max_context_chars=args.max_context_chars,
             ))
-        out_path = args.out or args.summary_tsv.with_name(
+        out_base = args.summary_tsv[0]
+        out_path = args.out or out_base.with_name(
             f"question_compare_{args.candidate_config}_vs_{args.baseline_config}.tsv"
         )
     else:
