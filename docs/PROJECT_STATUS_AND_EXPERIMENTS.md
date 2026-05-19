@@ -160,6 +160,8 @@ and memory construction also introduce run-to-run variance.
 | Pruned bad4 eval | Remove `conv-42 23` on top of bad3 | `curated_negative_memories_agg055_pruned_bad4`, top1, 1200 chars | 0.2493 | 0.3105 | Single run looked strong but needed repeat |
 | Pruned bad4 repeat | Repeat bad4 after promising single run | `curated_negative_memories_agg055_pruned_bad4`, top1, 1200 chars | 0.2011 +/- 0.0173 | 0.2585 +/- 0.0298 | Failed repeat; bad3 remains the best current curated route |
 | Pruned bad3 evolved-checkpoint eval | Evaluate checkpoint after isolated skill-tree-evolution training | copied `skills_memory/`, pruned bad3, top1, 1200 chars; evolution applied 0 skill-tree changes | 0.2534 | 0.3694 | Strong single run; diff showed no skill-tree edits, so the gain is from the trained checkpoint and needs repeat validation |
+| Pruned bad3 evolved-checkpoint repeat | Repeat the checkpoint produced by isolated pruned-bad3 training | same copied skill tree and final checkpoint from `skill_tree_evolution_pruned_bad3_20260519_134600` | 0.2377 +/- 0.0103 | 0.3217 +/- 0.0145 | New best repeated setting so far, but the gain is from checkpoint training, not skill-tree markdown evolution |
+| Pruned bad3 evolved-checkpoint category summary | Diagnose the evolved-checkpoint repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1633 / 0.2151 / 0.4742 / 0.2495 | 0.2705 / 0.1769 / 0.5667 / 0.3719 | Biggest repeat improvement over pruned bad3 is category 2 Judge and category 4; category 3 F1 is weaker than pruned bad3 |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -176,9 +178,9 @@ and memory construction also introduce run-to-run variance.
 4. Aggregate curated memories are more promising because one curated lesson can
    keep multiple concrete `Question -> Expected` examples from the cluster.
 5. Skill-tree evolution is wired. The isolated pruned-bad3 run processed hard
-   cases but applied 0 skill-tree changes, so the first strong eval from that
-   run is evidence for checkpoint training rather than evolved skill
-   definitions.
+   cases but applied 0 skill-tree changes. Its repeated eval is the best
+   repeated setting so far, but this is evidence for checkpoint training under
+   fixed pruned-bad3 negative memory rather than evolved skill definitions.
 6. The legacy MemSkill `--enable-designer` can now be run as an explicit
    skill-tree ablation. In the current architecture it evolves the flat
    operation bank, while the skill-tree execution path is edited by
@@ -234,7 +236,8 @@ and memory construction also introduce run-to-run variance.
     `conv-42 43` (-0.0923 F1), and `conv-42 9` (-0.0451 F1). The next
     controlled experiment is a pruned curated directory that removes only these
     three lessons.
-20. Pruning those three lessons produced the strongest current candidate:
+20. Pruning those three lessons produced the strongest negative-memory-only
+    curated candidate:
     F1 0.2309 +/- 0.0169 and LLM Judge 0.3095 +/- 0.0106. Category-wise,
     pruned bad3 scored Cat1 0.1801/0.2874, Cat2 0.2037/0.1154, Cat3
     0.5422/0.6167, and Cat4 0.2249/0.3594 for F1/Judge. The remaining
@@ -249,11 +252,15 @@ and memory construction also introduce run-to-run variance.
     collapsed to F1 0.2011 +/- 0.0173 and LLM Judge 0.2585 +/- 0.0298.
     Removing `conv-42 23` made the curated store too sparse/noisy; retain
     pruned bad3 as the current best candidate.
-23. The next phase should fix negative memory at pruned bad3 and test
-    skill-tree evolution in isolation. The evolution run must use a copied
-    `skills_memory/` directory and disable auto-recording new negative memories
-    so the result is attributable to skill-tree changes rather than prompt
-    guardrail drift.
+23. Repeating the pruned-bad3 evolved checkpoint produced the strongest repeated
+    setting so far: F1 0.2377 +/- 0.0103 and LLM Judge 0.3217 +/- 0.0145.
+    Since `diff -ru skills_memory <run_dir>/skills_memory` had no output, this
+    should be attributed to PPO/checkpoint training under fixed pruned-bad3
+    negative memory, not to skill-tree markdown evolution.
+24. The next phase should compare the evolved checkpoint against pruned bad3 at
+    question level, especially category 2 and category 4 wins and category 3
+    losses. Only after that should we decide whether to repeat this training
+    seed, adjust PPO settings, or make evolution prompts more aggressive.
 
 ## Recommended Next Experiments
 
@@ -329,9 +336,26 @@ and memory construction also introduce run-to-run variance.
      REPEATS=3 bash scripts/repeat_locomo_skilltree_pruned_bad3_evolved_checkpoint.sh
    ```
 
-12. Run on a larger split or another long-memory benchmark after the small
+12. Summarize and compare the evolved-checkpoint repeat before deciding the
+   next training change:
+
+   ```bash
+   python -B scripts/summarize_locomo_repeat_categories.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/summary.tsv \
+     --config-name evolved_checkpoint_pruned_bad3_top1_chars1200
+
+   python -B scripts/compare_locomo_repeat_questions.py \
+     --summary-tsv \
+       results/repeat_locomo_skilltree_curated_agg055_pruned_bad3_YYYYMMDD_HHMMSS/summary.tsv \
+       results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/summary.tsv \
+     --baseline-config curated_agg055_pruned_bad3_top1_chars1200 \
+     --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
+     --categories 2 3 4
+   ```
+
+13. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-13. Keep fine-tuning/RL over negative examples as a later phase. The current
+14. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

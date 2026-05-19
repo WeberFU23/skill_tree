@@ -477,6 +477,33 @@ Interpret this carefully: if `diff -ru skills_memory "$RUN_DIR/skills_memory"`
 has no output, the skill-tree markdown did not evolve. Any gain then comes from
 the trained checkpoint, not from new skill definitions.
 
+The 2026-05-19 repeat validated a modest checkpoint gain:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| pruned bad3 | 0.2309 +/- 0.0169 | 0.3095 +/- 0.0106 | best negative-memory-only curated route |
+| evolved checkpoint + pruned bad3 | 0.2377 +/- 0.0103 | 0.3217 +/- 0.0145 | best repeated setting so far; checkpoint gain, not skill-tree markdown evolution |
+
+Next, inspect category and question-level deltas:
+
+```bash
+python -B scripts/summarize_locomo_repeat_categories.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/summary.tsv \
+  --config-name evolved_checkpoint_pruned_bad3_top1_chars1200
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/category_summary.tsv
+
+python -B scripts/compare_locomo_repeat_questions.py \
+  --summary-tsv \
+    results/repeat_locomo_skilltree_curated_agg055_pruned_bad3_20260518_204719/summary.tsv \
+    results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/summary.tsv \
+  --baseline-config curated_agg055_pruned_bad3_top1_chars1200 \
+  --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
+  --categories 2 3 4 \
+  --out results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
