@@ -508,6 +508,18 @@ python -B scripts/summarize_question_compare_deltas.py \
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234_category_summary.tsv
+
+python -B scripts/show_question_compare_examples.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
+  --categories 3 \
+  --direction worst \
+  --top 10
+
+python -B scripts/show_question_compare_examples.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
+  --categories 2 4 \
+  --direction best \
+  --top 10
 ```
 
 Latest core-config repeat on 2026-05-16:

@@ -107,6 +107,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
+| `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
 | `scripts/summarize_negative_memory_question_impacts.py` | Group question-level wins/losses by retrieved negative-memory lesson |
 | `scripts/prune_curated_negative_memories.py` | Copy a curated negative-memory directory while excluding selected harmful lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh` | Evaluate curated agg055 after pruning the three negative-mean lessons from question-level diagnostics |
@@ -258,10 +259,11 @@ and memory construction also introduce run-to-run variance.
     Since `diff -ru skills_memory <run_dir>/skills_memory` had no output, this
     should be attributed to PPO/checkpoint training under fixed pruned-bad3
     negative memory, not to skill-tree markdown evolution.
-24. The next phase should compare the evolved checkpoint against pruned bad3 at
-    question level, especially category 2 and category 4 wins and category 3
-    losses. Only after that should we decide whether to repeat this training
-    seed, adjust PPO settings, or make evolution prompts more aggressive.
+24. Category-level question deltas show the evolved checkpoint has a mixed
+    profile: Cat2 improves slightly on F1 (+0.0114 mean delta) and clearly on
+    Judge (+0.0615), Cat4 improves on F1 (+0.0246), but Cat3 regresses on both
+    F1 (-0.0680) and Judge (-0.0500). The next phase should inspect concrete
+    Cat3 losses and Cat2/Cat4 wins before changing PPO or evolution prompts.
 
 ## Recommended Next Experiments
 
@@ -355,6 +357,12 @@ and memory construction also introduce run-to-run variance.
 
    python -B scripts/summarize_question_compare_deltas.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv
+
+   python -B scripts/show_question_compare_examples.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
+     --categories 3 \
+     --direction worst \
+     --top 10
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small
