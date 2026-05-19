@@ -107,6 +107,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
+| `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
 | `scripts/summarize_negative_memory_question_impacts.py` | Group question-level wins/losses by retrieved negative-memory lesson |
 | `scripts/prune_curated_negative_memories.py` | Copy a curated negative-memory directory while excluding selected harmful lessons |
@@ -370,6 +371,10 @@ and memory construction also introduce run-to-run variance.
      --direction worst \
      --top 10 \
      --show-retrieved
+
+   python -B scripts/summarize_question_compare_context_changes.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
+     --context retrieved
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

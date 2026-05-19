@@ -522,6 +522,13 @@ python -B scripts/show_question_compare_examples.py \
   --direction best \
   --top 10 \
   --show-retrieved
+
+python -B scripts/summarize_question_compare_context_changes.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
+  --context retrieved
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234_retrieved_context_summary.tsv
 ```
 
 Latest core-config repeat on 2026-05-16:
