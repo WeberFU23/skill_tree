@@ -440,6 +440,30 @@ If the single run is promising, repeat it:
 REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh
 ```
 
+The bad4 repeat did not validate the single-run improvement:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| curated agg055 pruned bad4 top1/1200 | 0.2011 +/- 0.0173 | 0.2585 +/- 0.0298 | worse than bad3; do not promote |
+
+Bad4 is an important negative result. Removing `conv-42 23` looked reasonable
+from category-2 attribution, but repeat showed that the remaining 4-memory
+store became too sparse/noisy. Keep `pruned_bad3` as the current best curated
+candidate.
+
+With the negative-memory route fixed at pruned bad3, run the next
+skill-tree-evolution ablation in an isolated skill-tree copy:
+
+```bash
+bash scripts/train_locomo_skilltree_pruned_bad3_autoevolve_isolated.sh
+```
+
+This script copies `skills_memory/` into a timestamped result directory, trains
+with `--enable-skill-tree-evolution`, uses `curated_negative_memories_agg055_pruned_bad3`,
+and disables new negative-memory writes by default. After it finishes, use the
+`EVAL_COMMANDS.txt` written in the run directory to evaluate the evolved skill
+tree.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |

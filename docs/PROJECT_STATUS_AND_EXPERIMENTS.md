@@ -112,6 +112,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh` | Repeat the pruned curated agg055 setting |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad4.sh` | Evaluate pruned bad3 plus removal of the Cat2-harmful `conv-42 23` lesson |
 | `scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh` | Repeat the pruned bad4 setting |
+| `scripts/train_locomo_skilltree_pruned_bad3_autoevolve_isolated.sh` | Train skill-tree evolution against fixed pruned-bad3 negative memory in an isolated skill-tree copy |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -155,6 +156,8 @@ and memory construction also introduce run-to-run variance.
 | Pruned curated eval | Remove the three negative-mean curated lessons found by question-level diagnostics | `curated_negative_memories_agg055_pruned_bad3`, top1, 1200 chars | 0.2192 | 0.2850 | Single run was promising but not decisive |
 | Pruned curated repeat | Repeat the pruned curated setting | `curated_negative_memories_agg055_pruned_bad3`, top1, 1200 chars | 0.2309 +/- 0.0169 | 0.3095 +/- 0.0106 | Best current candidate; beats raw top2 mean/Judge but still has variance |
 | Pruned curated category summary | Diagnose the pruned curated repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1801 / 0.2037 / 0.5422 / 0.2249 | 0.2874 / 0.1154 / 0.6167 / 0.3594 | Gains are broad except category 2 Judge, which remains the main weakness |
+| Pruned bad4 eval | Remove `conv-42 23` on top of bad3 | `curated_negative_memories_agg055_pruned_bad4`, top1, 1200 chars | 0.2493 | 0.3105 | Single run looked strong but needed repeat |
+| Pruned bad4 repeat | Repeat bad4 after promising single run | `curated_negative_memories_agg055_pruned_bad4`, top1, 1200 chars | 0.2011 +/- 0.0173 | 0.2585 +/- 0.0298 | Failed repeat; bad3 remains the best current curated route |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -237,6 +240,16 @@ and memory construction also introduce run-to-run variance.
     had 0 wins, 3 losses, and mean delta F1 -0.0707. `conv-42 35` was also
     negative on average (-0.0342), but it appeared in 87 rows and had 25 wins,
     so it should not be removed before a smaller conservative prune is tested.
+22. The bad4 repeat showed why repeat validation is mandatory. Although the
+    single bad4 eval scored F1 0.2493 and LLM Judge 0.3105, the 3-run repeat
+    collapsed to F1 0.2011 +/- 0.0173 and LLM Judge 0.2585 +/- 0.0298.
+    Removing `conv-42 23` made the curated store too sparse/noisy; retain
+    pruned bad3 as the current best candidate.
+23. The next phase should fix negative memory at pruned bad3 and test
+    skill-tree evolution in isolation. The evolution run must use a copied
+    `skills_memory/` directory and disable auto-recording new negative memories
+    so the result is attributable to skill-tree changes rather than prompt
+    guardrail drift.
 
 ## Recommended Next Experiments
 
@@ -298,11 +311,11 @@ and memory construction also introduce run-to-run variance.
      --candidate-config curated_agg055_pruned_bad3_top1_chars1200 \
      --categories 2
    ```
-10. Test pruned bad4, which removes `conv-42 23` on top of bad3:
+10. Use pruned bad3, not bad4, as the fixed negative-memory config for the next
+   controlled skill-tree-evolution ablation:
 
    ```bash
-   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad4.sh
-   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh
+   bash scripts/train_locomo_skilltree_pruned_bad3_autoevolve_isolated.sh
    ```
 11. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.

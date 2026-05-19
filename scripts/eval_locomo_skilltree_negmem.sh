@@ -14,6 +14,9 @@ NEGATIVE_MEMORY_MAX_CHARS="${NEGATIVE_MEMORY_MAX_CHARS:-1200}"
 MEMORY_CACHE_SUFFIX="${MEMORY_CACHE_SUFFIX:-locomo_skill_tree_eval}"
 OUT_FILE="${OUT_FILE:-./results/locomo_skill_tree_eval.json}"
 WANDB_RUN_NAME="${WANDB_RUN_NAME:-locomo-skill-tree-eval}"
+SKILL_TREE_DIR="${SKILL_TREE_DIR:-./skills_memory}"
+SAVE_DIR="${SAVE_DIR:-./checkpoints/locomo_skill_tree}"
+LOAD_CHECKPOINT="${LOAD_CHECKPOINT:-./checkpoints/locomo_skill_tree/locomo-skill-tree-train_epoch_final.pt}"
 NEGATIVE_MEMORY_ARGS=()
 if [[ -n "${NEGATIVE_MEMORY_MIN_SCORE:-}" ]]; then
     NEGATIVE_MEMORY_ARGS+=(--negative-memory-min-score "$NEGATIVE_MEMORY_MIN_SCORE")
@@ -38,7 +41,7 @@ python -B main.py \
     --session-mode fixed-length \
     --chunk-size 512 \
     --chunk-overlap 64 \
-    --load-checkpoint "./checkpoints/locomo_skill_tree/locomo-skill-tree-train_epoch_final.pt" \
+    --load-checkpoint "$LOAD_CHECKPOINT" \
     --dataset locomo \
     --data-file "./data/locomo10.json" \
     --model "deepseek-chat" \
@@ -53,7 +56,7 @@ python -B main.py \
     --reward-metric f1 \
     --device cuda \
     --enable-skill-tree \
-    --skill-tree-dir ./skills_memory \
+    --skill-tree-dir "$SKILL_TREE_DIR" \
     --skill-tree-top-k 3 \
     --skill-tree-max-depth 4 \
     --enable-negative-memory \
@@ -63,5 +66,5 @@ python -B main.py \
     "${NEGATIVE_MEMORY_ARGS[@]}" \
     --skip-load-snapshot-manager \
     --wandb-run-name "$WANDB_RUN_NAME" \
-    --save-dir ./checkpoints/locomo_skill_tree \
+    --save-dir "$SAVE_DIR" \
     --out-file "$OUT_FILE"
