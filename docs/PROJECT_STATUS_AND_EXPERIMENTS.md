@@ -284,6 +284,11 @@ and memory construction also introduce run-to-run variance.
     +0.0069 Judge over always using the evolved checkpoint), so any real router
     must be cheap and robust; gold category labels cannot be used as a final
     system feature.
+28. The first text-only router (`risk_baseline_v1`) reaches F1 0.2413 and LLM
+    Judge 0.3248. It recovers Cat3 by routing 39/60 Cat3 rows to baseline, but
+    leaves all Cat1 rows on the evolved checkpoint, where Cat1 is weaker. The
+    next router diagnostic adds profile-style question patterns to see whether
+    Cat1 can be recovered without losing Cat2/Cat4 gains.
 
 ## Recommended Next Experiments
 
@@ -403,6 +408,10 @@ and memory construction also introduce run-to-run variance.
 
    python -B scripts/evaluate_question_compare_question_router.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv
+
+   python -B scripts/evaluate_question_compare_question_router.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
+     --mode risk_profile_baseline_v1
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

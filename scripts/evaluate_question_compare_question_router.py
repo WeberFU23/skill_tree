@@ -88,6 +88,17 @@ BASELINE_RISK_PATTERNS = compile_patterns([
 ])
 
 
+BASELINE_PROFILE_PATTERNS = compile_patterns([
+    r"^who\b",
+    r"\bwhat kind of\b",
+    r"\bwhat (?:is|are|was|were)\b.+\b(?:job|profession|occupation|career|role|hobby|hobbies|interest|interests)\b",
+    r"\bwhat (?:is|are|was|were)\b.+\b(?:favorite|favourite|allergic|allergy|condition|relationship)\b",
+    r"\bwhere (?:is|are|was|were|does|do)\b.+\b(?:live|from|based)\b",
+    r"\bhow many times\b",
+    r"\bhow long\b",
+])
+
+
 def normalize_question(question: str) -> str:
     return " ".join((question or "").strip().lower().split())
 
@@ -98,12 +109,16 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
         return "candidate", "candidate_all"
     if mode == "baseline_all":
         return "baseline", "baseline_all"
-    if mode != "risk_baseline_v1":
+    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1"}:
         raise ValueError(f"Unknown router mode: {mode}")
 
     for pattern in BASELINE_RISK_PATTERNS:
         if pattern.search(text):
             return "baseline", f"risk:{pattern.pattern}"
+    if mode == "risk_profile_baseline_v1":
+        for pattern in BASELINE_PROFILE_PATTERNS:
+            if pattern.search(text):
+                return "baseline", f"profile:{pattern.pattern}"
     return "candidate", "default_candidate"
 
 
@@ -180,7 +195,7 @@ def main() -> int:
     parser.add_argument("question_compare_tsv", type=Path)
     parser.add_argument(
         "--mode",
-        choices=["risk_baseline_v1", "candidate_all", "baseline_all"],
+        choices=["risk_baseline_v1", "risk_profile_baseline_v1", "candidate_all", "baseline_all"],
         default="risk_baseline_v1",
     )
     parser.add_argument("--out", type=Path, default=None)
