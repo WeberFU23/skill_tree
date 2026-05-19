@@ -57,6 +57,12 @@ MEMORY_CACHE_SUFFIX="evolved_bad3_eval" \\
 OUT_FILE="$RUN_DIR/eval.json" \\
 WANDB_RUN_NAME="locomo-skill-tree-evolve-bad3-eval" \\
   bash scripts/eval_locomo_skilltree_negmem.sh
+
+If that single eval is promising, repeat it with:
+
+RUN_DIR="$RUN_DIR" \\
+REPEATS=3 \\
+  bash scripts/repeat_locomo_skilltree_pruned_bad3_evolved_checkpoint.sh
 EOF
 
 cat "$RUN_DIR/EVAL_COMMANDS.txt"

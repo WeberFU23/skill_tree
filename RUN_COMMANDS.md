@@ -464,6 +464,19 @@ and disables new negative-memory writes by default. After it finishes, use the
 `EVAL_COMMANDS.txt` written in the run directory to evaluate the evolved skill
 tree.
 
+If the single eval is promising, repeat-evaluate the produced checkpoint before
+promoting it. If `RUN_DIR` is omitted, the script uses the newest
+`results/skill_tree_evolution_pruned_bad3_*` directory:
+
+```bash
+RUN_DIR=results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS \
+  REPEATS=3 bash scripts/repeat_locomo_skilltree_pruned_bad3_evolved_checkpoint.sh
+```
+
+Interpret this carefully: if `diff -ru skills_memory "$RUN_DIR/skills_memory"`
+has no output, the skill-tree markdown did not evolve. Any gain then comes from
+the trained checkpoint, not from new skill definitions.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
