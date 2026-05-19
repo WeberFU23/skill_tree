@@ -264,6 +264,12 @@ and memory construction also introduce run-to-run variance.
     Judge (+0.0615), Cat4 improves on F1 (+0.0246), but Cat3 regresses on both
     F1 (-0.0680) and Judge (-0.0500). The next phase should inspect concrete
     Cat3 losses and Cat2/Cat4 wins before changing PPO or evolution prompts.
+25. Initial Cat3 loss examples show identical retrieved negative-memory lessons
+    between baseline and evolved checkpoint. The failures are mostly wrong
+    adjacent entities/places/preferences (for example Canada -> Japan/France,
+    California -> Colorado, Dodge Charger -> Subaru Forester), so the next
+    diagnostic should inspect retrieved QA memories to separate context
+    retrieval differences from answer-selection differences.
 
 ## Recommended Next Experiments
 
@@ -362,7 +368,8 @@ and memory construction also introduce run-to-run variance.
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
      --categories 3 \
      --direction worst \
-     --top 10
+     --top 10 \
+     --show-retrieved
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

@@ -33,7 +33,18 @@ def compact(text: str, max_chars: int) -> str:
     return text[: max_chars - 3] + "..."
 
 
-def print_example(row: Row, max_context_chars: int) -> None:
+def print_context(label: str, text: str, max_context_chars: int) -> None:
+    compacted = compact(text, max_context_chars)
+    if compacted:
+        print(f"{label}: {compacted}")
+
+
+def print_example(
+    row: Row,
+    max_context_chars: int,
+    show_negative: bool,
+    show_retrieved: bool,
+) -> None:
     print("---")
     print(
         "run={run} category={category} sample_id={sample_id} qa_idx={qa_idx} "
@@ -43,12 +54,12 @@ def print_example(row: Row, max_context_chars: int) -> None:
     print(f"GT: {row.get('ground_truth', '')}")
     print(f"baseline: {row.get('baseline_prediction', '')}")
     print(f"candidate: {row.get('candidate_prediction', '')}")
-    base_neg = compact(row.get("baseline_negative_memories", ""), max_context_chars)
-    cand_neg = compact(row.get("candidate_negative_memories", ""), max_context_chars)
-    if base_neg:
-        print(f"baseline_neg: {base_neg}")
-    if cand_neg:
-        print(f"candidate_neg: {cand_neg}")
+    if show_negative:
+        print_context("baseline_neg", row.get("baseline_negative_memories", ""), max_context_chars)
+        print_context("candidate_neg", row.get("candidate_negative_memories", ""), max_context_chars)
+    if show_retrieved:
+        print_context("baseline_retrieved", row.get("baseline_retrieved_memories", ""), max_context_chars)
+        print_context("candidate_retrieved", row.get("candidate_retrieved_memories", ""), max_context_chars)
 
 
 def main() -> int:
@@ -63,6 +74,8 @@ def main() -> int:
     )
     parser.add_argument("--top", type=int, default=10)
     parser.add_argument("--max-context-chars", type=int, default=700)
+    parser.add_argument("--show-retrieved", action="store_true", help="Print retrieved QA memories.")
+    parser.add_argument("--hide-negative", action="store_true", help="Do not print negative memories.")
     args = parser.parse_args()
 
     rows = read_rows(args.question_compare_tsv)
@@ -81,13 +94,13 @@ def main() -> int:
             print()
             print(f"Worst {args.top}")
             for row in sorted(cat_rows, key=lambda item: as_float(item.get("delta_f1", "")))[: args.top]:
-                print_example(row, args.max_context_chars)
+                print_example(row, args.max_context_chars, not args.hide_negative, args.show_retrieved)
 
         if args.direction in {"best", "both"}:
             print()
             print(f"Best {args.top}")
             for row in sorted(cat_rows, key=lambda item: as_float(item.get("delta_f1", "")), reverse=True)[: args.top]:
-                print_example(row, args.max_context_chars)
+                print_example(row, args.max_context_chars, not args.hide_negative, args.show_retrieved)
 
     return 0
 
