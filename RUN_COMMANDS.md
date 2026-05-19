@@ -544,6 +544,12 @@ python -B scripts/evaluate_question_compare_hybrid.py \
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_hybrid_candidate_cats_2_4.tsv
+
+python -B scripts/evaluate_question_compare_question_router.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_baseline_v1.tsv
 ```
 
 Latest core-config repeat on 2026-05-16:

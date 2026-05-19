@@ -107,6 +107,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/evaluate_question_compare_hybrid.py` | Compute an oracle category-routed hybrid from a question comparison TSV |
+| `scripts/evaluate_question_compare_question_router.py` | Evaluate a text-only router between two configs from question comparison rows |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
@@ -277,6 +278,12 @@ and memory construction also introduce run-to-run variance.
     all 60 compared rows and regresses (mean F1 delta -0.0680), while Cat2 and
     Cat4 also change context but improve on average. This points to checkpoint
     induced memory/retrieval drift rather than negative-memory noise.
+27. Oracle category routing, using pruned bad3 for Cat1/Cat3 and the evolved
+    checkpoint for Cat2/Cat4, reaches F1 0.2458 and LLM Judge 0.3286 on the
+    3-run comparison rows. This is a modest upper bound (+0.0080 F1 and
+    +0.0069 Judge over always using the evolved checkpoint), so any real router
+    must be cheap and robust; gold category labels cannot be used as a final
+    system feature.
 
 ## Recommended Next Experiments
 
@@ -393,6 +400,9 @@ and memory construction also introduce run-to-run variance.
    python -B scripts/evaluate_question_compare_hybrid.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
      --candidate-categories 2 4
+
+   python -B scripts/evaluate_question_compare_question_router.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small
