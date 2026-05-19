@@ -1,6 +1,6 @@
 # Project Status and Experiment Record
 
-Last updated: 2026-05-11
+Last updated: 2026-05-19
 
 ## Project Goal
 
@@ -303,7 +303,11 @@ and memory construction also introduce run-to-run variance.
 31. The conservative text router (`risk_profile_baseline_v2`) reaches F1 0.2447
     and LLM Judge 0.3296 on the combined comparison rows. This is nearly the
     oracle category hybrid's F1 (0.2458) and slightly exceeds its Judge
-    (0.3286), while using only question text.
+    (0.3286), while using only question text. The per-run readout is stable:
+    run 1 = 0.2447 / 0.3232, run 2 = 0.2479 / 0.3280, run 3 =
+    0.2416 / 0.3376, for F1 0.2447 +/- 0.0026 and Judge 0.3296 +/- 0.0060.
+    This makes v2 the current best diagnostic result, but it is still a
+    post-hoc comparison-row router rather than an end-to-end eval artifact.
 
 ## Recommended Next Experiments
 
@@ -439,9 +443,13 @@ and memory construction also introduce run-to-run variance.
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
    ```
 
-13. Run on a larger split or another long-memory benchmark after the small
+13. Turn `risk_profile_baseline_v2` from a post-hoc diagnostic into a formal
+   router artifact: materialize per-run selected outputs and a repeat-style
+   summary, then compare it against pruned bad3 and the evolved checkpoint like
+   any other config.
+14. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-14. Keep fine-tuning/RL over negative examples as a later phase. The current
+15. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

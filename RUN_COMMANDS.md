@@ -572,6 +572,27 @@ column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
 ```
 
+The 2026-05-19 v2 question-router diagnostic is the current strongest
+post-hoc result:
+
+| Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
+| --- | ---: | ---: | --- |
+| pruned bad3 | 0.2309 +/- 0.0169 | 0.3095 +/- 0.0106 | baseline negative-memory-only route |
+| evolved checkpoint + pruned bad3 | 0.2377 +/- 0.0103 | 0.3217 +/- 0.0145 | checkpoint-only gain; no skill markdown evolution |
+| text router v2 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | best diagnostic; routes 35/314 rows per run to baseline and the rest to evolved checkpoint |
+
+Per-run router readout:
+
+| Run | Baseline rows | Candidate rows | Baseline F1 / Judge | Candidate F1 / Judge | Router F1 / Judge |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 35 | 279 | 0.2507 / 0.3185 | 0.2234 / 0.3057 | 0.2447 / 0.3232 |
+| 2 | 35 | 279 | 0.2325 / 0.3153 | 0.2425 / 0.3185 | 0.2479 / 0.3280 |
+| 3 | 35 | 279 | 0.2095 / 0.2946 | 0.2473 / 0.3408 | 0.2416 / 0.3376 |
+
+Next step: materialize `risk_profile_baseline_v2` as a formal router artifact
+with selected per-run outputs and a repeat-style summary, then compare it as a
+normal config rather than only as a question-comparison diagnostic.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
