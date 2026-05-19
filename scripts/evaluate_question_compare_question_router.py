@@ -128,15 +128,15 @@ def metric(row: Row, prefix: str, name: str) -> float:
 
 def summarize(rows: List[Row], mode: str) -> Tuple[List[Row], List[Row]]:
     grouped: Dict[str, List[Tuple[Row, str, str]]] = defaultdict(list)
-    reason_counts: Counter[Tuple[str, str, str]] = Counter()
+    reason_groups: Dict[Tuple[str, str, str], List[Tuple[Row, str, str]]] = defaultdict(list)
 
     for row in rows:
         prefix, reason = route_question(row.get("question", ""), mode)
         category = row.get("category", "") or "<missing>"
         grouped[category].append((row, prefix, reason))
         grouped["ALL"].append((row, prefix, reason))
-        reason_counts[(category, prefix, reason)] += 1
-        reason_counts[("ALL", prefix, reason)] += 1
+        reason_groups[(category, prefix, reason)].append((row, prefix, reason))
+        reason_groups[("ALL", prefix, reason)].append((row, prefix, reason))
 
     summary_rows: List[Row] = []
     for category, items in sorted(grouped.items(), key=lambda pair: (pair[0] != "ALL", pair[0])):
@@ -178,15 +178,37 @@ def summarize(rows: List[Row], mode: str) -> Tuple[List[Row], List[Row]]:
             "router_delta_vs_candidate_llm_judge": format_signed(router_judge_mean - cand_judge_mean),
         })
 
-    reason_rows = [
-        {
+    reason_rows: List[Row] = []
+    for (category, selected, reason), items in sorted(reason_groups.items()):
+        baseline_f1 = [metric(row, "baseline", "f1") for row, _, _ in items]
+        candidate_f1 = [metric(row, "candidate", "f1") for row, _, _ in items]
+        router_f1 = [metric(row, prefix, "f1") for row, prefix, _ in items]
+        baseline_judge = [metric(row, "baseline", "llm_judge") for row, _, _ in items]
+        candidate_judge = [metric(row, "candidate", "llm_judge") for row, _, _ in items]
+        router_judge = [metric(row, prefix, "llm_judge") for row, prefix, _ in items]
+        base_f1_mean, _ = mean_std(baseline_f1)
+        cand_f1_mean, _ = mean_std(candidate_f1)
+        router_f1_mean, _ = mean_std(router_f1)
+        base_judge_mean, _ = mean_std(baseline_judge)
+        cand_judge_mean, _ = mean_std(candidate_judge)
+        router_judge_mean, _ = mean_std(router_judge)
+
+        reason_rows.append({
             "category": category,
             "selected": selected,
             "reason": reason,
-            "rows": str(count),
-        }
-        for (category, selected, reason), count in sorted(reason_counts.items())
-    ]
+            "rows": str(len(items)),
+            "baseline_f1_mean": format_float(base_f1_mean),
+            "candidate_f1_mean": format_float(cand_f1_mean),
+            "router_f1_mean": format_float(router_f1_mean),
+            "router_delta_vs_baseline_f1": format_signed(router_f1_mean - base_f1_mean),
+            "router_delta_vs_candidate_f1": format_signed(router_f1_mean - cand_f1_mean),
+            "baseline_llm_judge_mean": format_float(base_judge_mean),
+            "candidate_llm_judge_mean": format_float(cand_judge_mean),
+            "router_llm_judge_mean": format_float(router_judge_mean),
+            "router_delta_vs_baseline_llm_judge": format_signed(router_judge_mean - base_judge_mean),
+            "router_delta_vs_candidate_llm_judge": format_signed(router_judge_mean - cand_judge_mean),
+        })
     return summary_rows, reason_rows
 
 
@@ -248,7 +270,22 @@ def main() -> int:
         "router_delta_vs_baseline_llm_judge",
         "router_delta_vs_candidate_llm_judge",
     ]
-    reason_fields = ["category", "selected", "reason", "rows"]
+    reason_fields = [
+        "category",
+        "selected",
+        "reason",
+        "rows",
+        "baseline_f1_mean",
+        "candidate_f1_mean",
+        "router_f1_mean",
+        "router_delta_vs_baseline_f1",
+        "router_delta_vs_candidate_f1",
+        "baseline_llm_judge_mean",
+        "candidate_llm_judge_mean",
+        "router_llm_judge_mean",
+        "router_delta_vs_baseline_llm_judge",
+        "router_delta_vs_candidate_llm_judge",
+    ]
     write_rows(out_path, summary_rows, summary_fields)
     write_rows(reasons_path, reason_rows, reason_fields)
     print(f"Wrote question-router summary: {out_path}")

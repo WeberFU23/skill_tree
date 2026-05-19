@@ -289,6 +289,11 @@ and memory construction also introduce run-to-run variance.
     leaves all Cat1 rows on the evolved checkpoint, where Cat1 is weaker. The
     next router diagnostic adds profile-style question patterns to see whether
     Cat1 can be recovered without losing Cat2/Cat4 gains.
+29. The profile-aware router (`risk_profile_baseline_v1`) reaches F1 0.2427
+    and LLM Judge 0.3270. It improves over the first text router and approaches
+    the oracle category hybrid (0.2458 / 0.3286), but still trails the oracle
+    because Cat1 is only partially recovered and Cat4 loses a small amount of
+    F1. Inspect router reason metrics before adding more patterns.
 
 ## Recommended Next Experiments
 
@@ -412,6 +417,9 @@ and memory construction also introduce run-to-run variance.
    python -B scripts/evaluate_question_compare_question_router.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
      --mode risk_profile_baseline_v1
+
+   column -t -s $'\t' \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v1_reasons.tsv
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

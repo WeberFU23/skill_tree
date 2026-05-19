@@ -557,6 +557,9 @@ python -B scripts/evaluate_question_compare_question_router.py \
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v1.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v1_reasons.tsv
 ```
 
 Latest core-config repeat on 2026-05-16:
