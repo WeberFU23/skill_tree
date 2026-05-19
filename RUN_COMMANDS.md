@@ -421,6 +421,25 @@ python -B scripts/compare_locomo_repeat_questions.py \
   --categories 2
 ```
 
+The Cat2 question-level comparison showed two negative-mean remaining lessons:
+
+| Memory key | Rows | Wins | Losses | Mean delta F1 | Readout |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `curated auto failure locomo conv-42 23` | 6 | 0 | 3 | -0.0707 | category-1 lesson retrieved for category-2 questions; safest next prune |
+| `curated auto failure locomo conv-42 35` | 87 | 25 | 21 | -0.0342 | broad high-recall lesson; do not prune until isolated |
+
+The next conservative pruning test removes only `conv-42 23` on top of bad3:
+
+```bash
+bash scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad4.sh
+```
+
+If the single run is promising, repeat it:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |

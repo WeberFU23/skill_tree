@@ -110,6 +110,8 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/prune_curated_negative_memories.py` | Copy a curated negative-memory directory while excluding selected harmful lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh` | Evaluate curated agg055 after pruning the three negative-mean lessons from question-level diagnostics |
 | `scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad3.sh` | Repeat the pruned curated agg055 setting |
+| `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad4.sh` | Evaluate pruned bad3 plus removal of the Cat2-harmful `conv-42 23` lesson |
+| `scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh` | Repeat the pruned bad4 setting |
 | `scripts/sweep_locomo_skilltree_curated_negmem_budget.sh` | Sweep curated negative-memory top-k and prompt budget |
 
 ## Experiment Record
@@ -230,6 +232,11 @@ and memory construction also introduce run-to-run variance.
     pruned bad3 scored Cat1 0.1801/0.2874, Cat2 0.2037/0.1154, Cat3
     0.5422/0.6167, and Cat4 0.2249/0.3594 for F1/Judge. The remaining
     weakness is category 2 semantic correctness.
+21. Category-2 question-level comparison of pruned bad3 vs raw top2 found
+    `conv-42 23` as the cleanest next removal: it appeared in 6 Cat2 rows,
+    had 0 wins, 3 losses, and mean delta F1 -0.0707. `conv-42 35` was also
+    negative on average (-0.0342), but it appeared in 87 rows and had 25 wins,
+    so it should not be removed before a smaller conservative prune is tested.
 
 ## Recommended Next Experiments
 
@@ -291,9 +298,15 @@ and memory construction also introduce run-to-run variance.
      --candidate-config curated_agg055_pruned_bad3_top1_chars1200 \
      --categories 2
    ```
-10. Run on a larger split or another long-memory benchmark after the small
+10. Test pruned bad4, which removes `conv-42 23` on top of bad3:
+
+   ```bash
+   bash scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad4.sh
+   REPEATS=3 bash scripts/repeat_locomo_skilltree_curated_agg055_pruned_bad4.sh
+   ```
+11. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-11. Keep fine-tuning/RL over negative examples as a later phase. The current
+12. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 
