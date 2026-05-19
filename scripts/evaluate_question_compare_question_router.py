@@ -99,6 +99,23 @@ BASELINE_PROFILE_PATTERNS = compile_patterns([
 ])
 
 
+BASELINE_RISK_STRONG_PATTERNS = compile_patterns([
+    r"\bwhich country\b",
+    r"\bwhich us state\b",
+    r"\bwhich state\b",
+    r"\bwould\b.+\bprefer\b",
+    r"\bdoes\b.+\blive close\b",
+])
+
+
+BASELINE_PROFILE_STRONG_PATTERNS = compile_patterns([
+    r"^who\b",
+    r"\bwhat kind of\b",
+    r"\bhow many times\b",
+    r"\bhow long\b",
+])
+
+
 def normalize_question(question: str) -> str:
     return " ".join((question or "").strip().lower().split())
 
@@ -109,14 +126,20 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
         return "candidate", "candidate_all"
     if mode == "baseline_all":
         return "baseline", "baseline_all"
-    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1"}:
+    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2"}:
         raise ValueError(f"Unknown router mode: {mode}")
 
-    for pattern in BASELINE_RISK_PATTERNS:
+    risk_patterns = BASELINE_RISK_PATTERNS
+    profile_patterns = BASELINE_PROFILE_PATTERNS
+    if mode == "risk_profile_baseline_v2":
+        risk_patterns = BASELINE_RISK_STRONG_PATTERNS
+        profile_patterns = BASELINE_PROFILE_STRONG_PATTERNS
+
+    for pattern in risk_patterns:
         if pattern.search(text):
             return "baseline", f"risk:{pattern.pattern}"
-    if mode == "risk_profile_baseline_v1":
-        for pattern in BASELINE_PROFILE_PATTERNS:
+    if mode in {"risk_profile_baseline_v1", "risk_profile_baseline_v2"}:
+        for pattern in profile_patterns:
             if pattern.search(text):
                 return "baseline", f"profile:{pattern.pattern}"
     return "candidate", "default_candidate"
@@ -217,7 +240,7 @@ def main() -> int:
     parser.add_argument("question_compare_tsv", type=Path)
     parser.add_argument(
         "--mode",
-        choices=["risk_baseline_v1", "risk_profile_baseline_v1", "candidate_all", "baseline_all"],
+        choices=["risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2", "candidate_all", "baseline_all"],
         default="risk_baseline_v1",
     )
     parser.add_argument("--out", type=Path, default=None)

@@ -294,6 +294,12 @@ and memory construction also introduce run-to-run variance.
     the oracle category hybrid (0.2458 / 0.3286), but still trails the oracle
     because Cat1 is only partially recovered and Cat4 loses a small amount of
     F1. Inspect router reason metrics before adding more patterns.
+30. Router reason metrics show that `who`, `what kind of`, `how long`, and
+    `how many times` are useful baseline routes, while broader patterns such as
+    `what advice`, `what role`, `what challenges`, `how do`, `how might`,
+    `in light of`, and `favorite/allergic/condition/relationship` often hurt
+    F1. The next router mode (`risk_profile_baseline_v2`) keeps only the
+    empirically strong text patterns.
 
 ## Recommended Next Experiments
 
@@ -420,6 +426,10 @@ and memory construction also introduce run-to-run variance.
 
    column -t -s $'\t' \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v1_reasons.tsv
+
+   python -B scripts/evaluate_question_compare_question_router.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
+     --mode risk_profile_baseline_v2
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small
