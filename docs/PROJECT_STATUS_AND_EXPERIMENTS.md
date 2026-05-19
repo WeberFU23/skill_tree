@@ -106,6 +106,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
+| `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_negative_memory_question_impacts.py` | Group question-level wins/losses by retrieved negative-memory lesson |
 | `scripts/prune_curated_negative_memories.py` | Copy a curated negative-memory directory while excluding selected harmful lessons |
 | `scripts/eval_locomo_skilltree_negmem_curated_agg055_pruned_bad3.sh` | Evaluate curated agg055 after pruning the three negative-mean lessons from question-level diagnostics |
@@ -351,6 +352,9 @@ and memory construction also introduce run-to-run variance.
      --baseline-config curated_agg055_pruned_bad3_top1_chars1200 \
      --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
      --categories 2 3 4
+
+   python -B scripts/summarize_question_compare_deltas.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

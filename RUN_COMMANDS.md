@@ -502,6 +502,12 @@ python -B scripts/compare_locomo_repeat_questions.py \
   --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
   --categories 2 3 4 \
   --out results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv
+
+python -B scripts/summarize_question_compare_deltas.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234_category_summary.tsv
 ```
 
 Latest core-config repeat on 2026-05-16:
