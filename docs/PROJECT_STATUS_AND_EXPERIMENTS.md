@@ -106,6 +106,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
+| `scripts/evaluate_question_compare_hybrid.py` | Compute an oracle category-routed hybrid from a question comparison TSV |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
@@ -271,6 +272,11 @@ and memory construction also introduce run-to-run variance.
     California -> Colorado, Dodge Charger -> Subaru Forester), so the next
     diagnostic should inspect retrieved QA memories to separate context
     retrieval differences from answer-selection differences.
+26. Retrieved-context summary confirmed the evolved checkpoint changes almost
+    every retrieved QA memory in Cat2/Cat3/Cat4. Cat3 has changed context for
+    all 60 compared rows and regresses (mean F1 delta -0.0680), while Cat2 and
+    Cat4 also change context but improve on average. This points to checkpoint
+    induced memory/retrieval drift rather than negative-memory noise.
 
 ## Recommended Next Experiments
 
@@ -375,6 +381,18 @@ and memory construction also introduce run-to-run variance.
    python -B scripts/summarize_question_compare_context_changes.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234.tsv \
      --context retrieved
+
+   python -B scripts/compare_locomo_repeat_questions.py \
+     --summary-tsv \
+       results/repeat_locomo_skilltree_curated_agg055_pruned_bad3_YYYYMMDD_HHMMSS/summary.tsv \
+       results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/summary.tsv \
+     --baseline-config curated_agg055_pruned_bad3_top1_chars1200 \
+     --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
+     --out results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv
+
+   python -B scripts/evaluate_question_compare_hybrid.py \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
+     --candidate-categories 2 4
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small

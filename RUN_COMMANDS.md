@@ -529,6 +529,21 @@ python -B scripts/summarize_question_compare_context_changes.py \
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_cat234_retrieved_context_summary.tsv
+
+python -B scripts/compare_locomo_repeat_questions.py \
+  --summary-tsv \
+    results/repeat_locomo_skilltree_curated_agg055_pruned_bad3_20260518_204719/summary.tsv \
+    results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/summary.tsv \
+  --baseline-config curated_agg055_pruned_bad3_top1_chars1200 \
+  --candidate-config evolved_checkpoint_pruned_bad3_top1_chars1200 \
+  --out results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv
+
+python -B scripts/evaluate_question_compare_hybrid.py \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
+  --candidate-categories 2 4
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_hybrid_candidate_cats_2_4.tsv
 ```
 
 Latest core-config repeat on 2026-05-16:
