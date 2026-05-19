@@ -149,17 +149,20 @@ def metric(row: Row, prefix: str, name: str) -> float:
     return as_float(row.get(f"{prefix}_{name}", ""))
 
 
-def summarize(rows: List[Row], mode: str) -> Tuple[List[Row], List[Row]]:
+def summarize(rows: List[Row], mode: str) -> Tuple[List[Row], List[Row], List[Row]]:
     grouped: Dict[str, List[Tuple[Row, str, str]]] = defaultdict(list)
     reason_groups: Dict[Tuple[str, str, str], List[Tuple[Row, str, str]]] = defaultdict(list)
+    run_groups: Dict[str, List[Tuple[Row, str, str]]] = defaultdict(list)
 
     for row in rows:
         prefix, reason = route_question(row.get("question", ""), mode)
         category = row.get("category", "") or "<missing>"
+        run = row.get("run", "") or "<missing>"
         grouped[category].append((row, prefix, reason))
         grouped["ALL"].append((row, prefix, reason))
         reason_groups[(category, prefix, reason)].append((row, prefix, reason))
         reason_groups[("ALL", prefix, reason)].append((row, prefix, reason))
+        run_groups[run].append((row, prefix, reason))
 
     summary_rows: List[Row] = []
     for category, items in sorted(grouped.items(), key=lambda pair: (pair[0] != "ALL", pair[0])):
@@ -232,7 +235,34 @@ def summarize(rows: List[Row], mode: str) -> Tuple[List[Row], List[Row]]:
             "router_delta_vs_baseline_llm_judge": format_signed(router_judge_mean - base_judge_mean),
             "router_delta_vs_candidate_llm_judge": format_signed(router_judge_mean - cand_judge_mean),
         })
-    return summary_rows, reason_rows
+    run_rows: List[Row] = []
+    for run, items in sorted(run_groups.items(), key=lambda pair: int(pair[0]) if pair[0].isdigit() else pair[0]):
+        baseline_f1 = [metric(row, "baseline", "f1") for row, _, _ in items]
+        candidate_f1 = [metric(row, "candidate", "f1") for row, _, _ in items]
+        router_f1 = [metric(row, prefix, "f1") for row, prefix, _ in items]
+        baseline_judge = [metric(row, "baseline", "llm_judge") for row, _, _ in items]
+        candidate_judge = [metric(row, "candidate", "llm_judge") for row, _, _ in items]
+        router_judge = [metric(row, prefix, "llm_judge") for row, prefix, _ in items]
+        selected_counts = Counter(prefix for _, prefix, _ in items)
+        base_f1_mean, _ = mean_std(baseline_f1)
+        cand_f1_mean, _ = mean_std(candidate_f1)
+        router_f1_mean, _ = mean_std(router_f1)
+        base_judge_mean, _ = mean_std(baseline_judge)
+        cand_judge_mean, _ = mean_std(candidate_judge)
+        router_judge_mean, _ = mean_std(router_judge)
+        run_rows.append({
+            "run": run,
+            "rows": str(len(items)),
+            "selected_baseline_rows": str(selected_counts["baseline"]),
+            "selected_candidate_rows": str(selected_counts["candidate"]),
+            "baseline_f1": format_float(base_f1_mean),
+            "candidate_f1": format_float(cand_f1_mean),
+            "router_f1": format_float(router_f1_mean),
+            "baseline_llm_judge": format_float(base_judge_mean),
+            "candidate_llm_judge": format_float(cand_judge_mean),
+            "router_llm_judge": format_float(router_judge_mean),
+        })
+    return summary_rows, reason_rows, run_rows
 
 
 def main() -> int:
@@ -245,6 +275,7 @@ def main() -> int:
     )
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--reasons-out", type=Path, default=None)
+    parser.add_argument("--runs-out", type=Path, default=None)
     args = parser.parse_args()
 
     rows = read_rows(args.question_compare_tsv)
@@ -269,7 +300,10 @@ def main() -> int:
     reasons_path = args.reasons_out or args.question_compare_tsv.with_name(
         args.question_compare_tsv.stem + f"_question_router_{args.mode}_reasons.tsv"
     )
-    summary_rows, reason_rows = summarize(rows, args.mode)
+    runs_path = args.runs_out or args.question_compare_tsv.with_name(
+        args.question_compare_tsv.stem + f"_question_router_{args.mode}_runs.tsv"
+    )
+    summary_rows, reason_rows, run_rows = summarize(rows, args.mode)
 
     summary_fields = [
         "category",
@@ -309,10 +343,36 @@ def main() -> int:
         "router_delta_vs_baseline_llm_judge",
         "router_delta_vs_candidate_llm_judge",
     ]
+    run_fields = [
+        "run",
+        "rows",
+        "selected_baseline_rows",
+        "selected_candidate_rows",
+        "baseline_f1",
+        "candidate_f1",
+        "router_f1",
+        "baseline_llm_judge",
+        "candidate_llm_judge",
+        "router_llm_judge",
+    ]
     write_rows(out_path, summary_rows, summary_fields)
     write_rows(reasons_path, reason_rows, reason_fields)
+    write_rows(runs_path, run_rows, run_fields)
     print(f"Wrote question-router summary: {out_path}")
     print(f"Wrote question-router reasons: {reasons_path}")
+    print(f"Wrote question-router runs: {runs_path}")
+    router_f1_mean, router_f1_std = mean_std(as_float(row["router_f1"]) for row in run_rows)
+    router_judge_mean, router_judge_std = mean_std(as_float(row["router_llm_judge"]) for row in run_rows)
+    print(
+        "Router repeat mean over {n} runs: F1={f1_mean:.4f} +/- {f1_std:.4f}, "
+        "LLM Judge={judge_mean:.4f} +/- {judge_std:.4f}".format(
+            n=len(run_rows),
+            f1_mean=router_f1_mean,
+            f1_std=router_f1_std,
+            judge_mean=router_judge_mean,
+            judge_std=router_judge_std,
+        )
+    )
     print(f"Rows: {len(rows)}")
     print(f"Mode: {args.mode}")
     return 0

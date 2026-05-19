@@ -300,6 +300,10 @@ and memory construction also introduce run-to-run variance.
     `in light of`, and `favorite/allergic/condition/relationship` often hurt
     F1. The next router mode (`risk_profile_baseline_v2`) keeps only the
     empirically strong text patterns.
+31. The conservative text router (`risk_profile_baseline_v2`) reaches F1 0.2447
+    and LLM Judge 0.3296 on the combined comparison rows. This is nearly the
+    oracle category hybrid's F1 (0.2458) and slightly exceeds its Judge
+    (0.3286), while using only question text.
 
 ## Recommended Next Experiments
 
@@ -430,6 +434,9 @@ and memory construction also introduce run-to-run variance.
    python -B scripts/evaluate_question_compare_question_router.py \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
      --mode risk_profile_baseline_v2
+
+   column -t -s $'\t' \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
    ```
 
 13. Run on a larger split or another long-memory benchmark after the small
