@@ -604,6 +604,21 @@ script now writes:
 - `*_materialized/logs/*.log`: category lines compatible with
   `summarize_locomo_repeat_categories.py`.
 
+Analyze the materialized router output against both repeated parents:
+
+```bash
+bash scripts/analyze_question_router_v2_materialized.sh
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_category_summary.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_question_router_risk_profile_baseline_v2_vs_pruned_bad3_all_category_summary.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_question_router_risk_profile_baseline_v2_vs_evolved_checkpoint_all_category_summary.tsv
+```
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |

@@ -108,6 +108,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/evaluate_question_compare_hybrid.py` | Compute an oracle category-routed hybrid from a question comparison TSV |
 | `scripts/evaluate_question_compare_question_router.py` | Evaluate a text-only router between two configs from question comparison rows |
+| `scripts/analyze_question_router_v2_materialized.sh` | Analyze the materialized v2 question-router summary against pruned bad3 and evolved checkpoint repeats |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
@@ -448,8 +449,14 @@ and memory construction also introduce run-to-run variance.
    ```
 
 13. Use the materialized `risk_profile_baseline_v2` repeat summary for the next
-   comparison pass, then decide whether to implement the same question-text
-   route inside an end-to-end eval script.
+   comparison pass:
+
+   ```bash
+   bash scripts/analyze_question_router_v2_materialized.sh
+   ```
+
+   Then decide whether to implement the same question-text route inside an
+   end-to-end eval script.
 14. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 15. Keep fine-tuning/RL over negative examples as a later phase. The current
