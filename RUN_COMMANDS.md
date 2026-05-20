@@ -563,13 +563,17 @@ column -t -s $'\t' \
 
 python -B scripts/evaluate_question_compare_question_router.py \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv \
-  --mode risk_profile_baseline_v2
+  --mode risk_profile_baseline_v2 \
+  --config-name question_router_risk_profile_baseline_v2
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2.tsv
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_repeat_summary.tsv
 ```
 
 The 2026-05-19 v2 question-router diagnostic is the current strongest
@@ -591,7 +595,14 @@ Per-run router readout:
 
 Next step: materialize `risk_profile_baseline_v2` as a formal router artifact
 with selected per-run outputs and a repeat-style summary, then compare it as a
-normal config rather than only as a question-comparison diagnostic.
+normal config rather than only as a question-comparison diagnostic. The router
+script now writes:
+
+- `*_selected.tsv`: one row per question with selected prediction/reason.
+- `*_repeat_summary.tsv`: compatible config/run/F1/Judge/out_file summary.
+- `*_materialized/*.json`: per-run detailed JSON with routed predictions.
+- `*_materialized/logs/*.log`: category lines compatible with
+  `summarize_locomo_repeat_categories.py`.
 
 Latest core-config repeat on 2026-05-16:
 

@@ -306,8 +306,12 @@ and memory construction also introduce run-to-run variance.
     (0.3286), while using only question text. The per-run readout is stable:
     run 1 = 0.2447 / 0.3232, run 2 = 0.2479 / 0.3280, run 3 =
     0.2416 / 0.3376, for F1 0.2447 +/- 0.0026 and Judge 0.3296 +/- 0.0060.
-    This makes v2 the current best diagnostic result, but it is still a
-    post-hoc comparison-row router rather than an end-to-end eval artifact.
+    This makes v2 the current best diagnostic result.
+32. The question-router diagnostic now materializes selected per-question rows,
+    per-run JSON outputs, per-run logs, and a repeat-style summary. This makes
+    the v2 router easier to archive and compare as a normal result, although
+    it is still assembled from baseline/candidate comparison rows rather than
+    produced by a single end-to-end inference pass.
 
 ## Recommended Next Experiments
 
@@ -443,10 +447,9 @@ and memory construction also introduce run-to-run variance.
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
    ```
 
-13. Turn `risk_profile_baseline_v2` from a post-hoc diagnostic into a formal
-   router artifact: materialize per-run selected outputs and a repeat-style
-   summary, then compare it against pruned bad3 and the evolved checkpoint like
-   any other config.
+13. Use the materialized `risk_profile_baseline_v2` repeat summary for the next
+   comparison pass, then decide whether to implement the same question-text
+   route inside an end-to-end eval script.
 14. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 15. Keep fine-tuning/RL over negative examples as a later phase. The current
