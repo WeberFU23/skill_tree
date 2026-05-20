@@ -108,7 +108,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
 | `scripts/evaluate_question_compare_hybrid.py` | Compute an oracle category-routed hybrid from a question comparison TSV |
 | `scripts/evaluate_question_compare_question_router.py` | Evaluate a text-only router between two configs from question comparison rows |
-| `scripts/analyze_question_router_v2_materialized.sh` | Analyze the materialized v2 question-router summary against pruned bad3 and evolved checkpoint repeats |
+| `scripts/analyze_question_router_v2_materialized.sh` | Build missing question-compare/router artifacts and analyze the materialized v2 question-router summary against pruned bad3 and evolved checkpoint repeats |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |

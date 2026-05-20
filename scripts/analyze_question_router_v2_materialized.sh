@@ -45,13 +45,15 @@ ROUTER_MODE="${ROUTER_MODE:-risk_profile_baseline_v2}"
 QUESTION_COMPARE_ALL="${QUESTION_COMPARE_ALL:-$REPEAT_DIR/question_compare_evolved_checkpoint_vs_pruned_bad3_all.tsv}"
 ROUTER_SUMMARY="${ROUTER_SUMMARY:-$REPEAT_DIR/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_${ROUTER_MODE}_repeat_summary.tsv}"
 
+if [[ ! -f "$QUESTION_COMPARE_ALL" ]]; then
+    python -B scripts/compare_locomo_repeat_questions.py \
+        --summary-tsv "$BASELINE_SUMMARY" "$EVOLVED_SUMMARY" \
+        --baseline-config "$BASELINE_CONFIG" \
+        --candidate-config "$EVOLVED_CONFIG" \
+        --out "$QUESTION_COMPARE_ALL"
+fi
+
 if [[ ! -f "$ROUTER_SUMMARY" ]]; then
-    if [[ ! -f "$QUESTION_COMPARE_ALL" ]]; then
-        echo "[ERROR] Missing router summary and source question compare TSV:" >&2
-        echo "        $ROUTER_SUMMARY" >&2
-        echo "        $QUESTION_COMPARE_ALL" >&2
-        exit 1
-    fi
     python -B scripts/evaluate_question_compare_question_router.py \
         "$QUESTION_COMPARE_ALL" \
         --mode "$ROUTER_MODE" \

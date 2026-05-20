@@ -619,6 +619,9 @@ column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_question_router_risk_profile_baseline_v2_vs_evolved_checkpoint_all_category_summary.tsv
 ```
 
+The analysis script auto-generates the all-question baseline-vs-evolved compare
+TSV if it is missing, then materializes the router summary if needed.
+
 Latest core-config repeat on 2026-05-16:
 
 | Config | F1 mean +/- std | LLM Judge mean +/- std | Readout |
