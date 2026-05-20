@@ -313,6 +313,10 @@ and memory construction also introduce run-to-run variance.
     the v2 router easier to archive and compare as a normal result, although
     it is still assembled from baseline/candidate comparison rows rather than
     produced by a single end-to-end inference pass.
+33. The materialized v2 category profile is: Cat1 0.1691 / 0.2826, Cat2
+    0.2177 / 0.1769, Cat3 0.5602 / 0.6500, Cat4 0.2489 / 0.3719. This
+    preserves the evolved-checkpoint gains on Cat2/Cat4 and recovers Cat3
+    beyond the pruned-bad3 baseline, while Cat1 remains the main regression.
 
 ## Recommended Next Experiments
 

@@ -61,6 +61,8 @@ fi
 ROUTER_CATEGORY_SUMMARY="$REPEAT_DIR/question_router_${ROUTER_MODE}_category_summary.tsv"
 ROUTER_VS_BASELINE="$REPEAT_DIR/question_compare_${ROUTER_CONFIG}_vs_pruned_bad3_all.tsv"
 ROUTER_VS_EVOLVED="$REPEAT_DIR/question_compare_${ROUTER_CONFIG}_vs_evolved_checkpoint_all.tsv"
+ROUTER_VS_BASELINE_CATEGORY_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_category_summary.tsv"
+ROUTER_VS_EVOLVED_CATEGORY_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_category_summary.tsv"
 
 python -B scripts/summarize_locomo_repeat_categories.py \
     "$ROUTER_SUMMARY" \
@@ -90,7 +92,18 @@ echo "==========================================================================
 echo "router_summary=$ROUTER_SUMMARY"
 echo "router_category_summary=$ROUTER_CATEGORY_SUMMARY"
 echo "router_vs_pruned_bad3=$ROUTER_VS_BASELINE"
+echo "router_vs_pruned_bad3_category_summary=$ROUTER_VS_BASELINE_CATEGORY_SUMMARY"
 echo "router_vs_evolved_checkpoint=$ROUTER_VS_EVOLVED"
+echo "router_vs_evolved_checkpoint_category_summary=$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
 echo
 
+echo "Router category summary"
 column -t -s $'\t' "$ROUTER_CATEGORY_SUMMARY" || cat "$ROUTER_CATEGORY_SUMMARY"
+
+echo
+echo "Router vs pruned bad3 category deltas"
+column -t -s $'\t' "$ROUTER_VS_BASELINE_CATEGORY_SUMMARY" || cat "$ROUTER_VS_BASELINE_CATEGORY_SUMMARY"
+
+echo
+echo "Router vs evolved checkpoint category deltas"
+column -t -s $'\t' "$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY" || cat "$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
