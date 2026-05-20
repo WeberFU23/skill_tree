@@ -610,6 +610,9 @@ Analyze the materialized router output against both repeated parents:
 bash scripts/analyze_question_router_v2_materialized.sh
 
 column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_overall_summary.tsv
+
+column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_category_summary.tsv
 
 column -t -s $'\t' \

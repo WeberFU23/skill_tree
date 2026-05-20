@@ -38,6 +38,45 @@ if [[ ! -f "$EVOLVED_SUMMARY" ]]; then
     exit 1
 fi
 
+summarize_repeat_config() {
+    local label="$1"
+    local summary_file="$2"
+    local wanted_config="$3"
+    awk -F '\t' -v label="$label" -v wanted_config="$wanted_config" '
+    NR == 1 {
+        for (i = 1; i <= NF; i++) {
+            col[$i] = i
+        }
+        next
+    }
+    {
+        if (wanted_config != "" && col["config"] && $(col["config"]) != wanted_config) {
+            next
+        }
+        f1 = $(col["f1"])
+        judge = $(col["llm_judge"])
+        if (f1 == "" || f1 == "NA" || judge == "" || judge == "NA") {
+            next
+        }
+        n += 1
+        f1_sum += f1
+        f1_sq += f1 * f1
+        judge_sum += judge
+        judge_sq += judge * judge
+    }
+    END {
+        if (n == 0) {
+            printf "%s\t0\tNA\tNA\tNA\tNA\t%s\n", label, wanted_config
+            exit
+        }
+        f1_mean = f1_sum / n
+        judge_mean = judge_sum / n
+        f1_std = sqrt((f1_sq / n) - (f1_mean * f1_mean))
+        judge_std = sqrt((judge_sq / n) - (judge_mean * judge_mean))
+        printf "%s\t%d\t%.4f\t%.4f\t%.4f\t%.4f\t%s\n", label, n, f1_mean, f1_std, judge_mean, judge_std, wanted_config
+    }' "$summary_file"
+}
+
 BASELINE_CONFIG="${BASELINE_CONFIG:-curated_agg055_pruned_bad3_top1_chars1200}"
 EVOLVED_CONFIG="${EVOLVED_CONFIG:-evolved_checkpoint_pruned_bad3_top1_chars1200}"
 ROUTER_CONFIG="${ROUTER_CONFIG:-question_router_risk_profile_baseline_v2}"
@@ -65,6 +104,7 @@ ROUTER_VS_BASELINE="$REPEAT_DIR/question_compare_${ROUTER_CONFIG}_vs_pruned_bad3
 ROUTER_VS_EVOLVED="$REPEAT_DIR/question_compare_${ROUTER_CONFIG}_vs_evolved_checkpoint_all.tsv"
 ROUTER_VS_BASELINE_CATEGORY_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_category_summary.tsv"
 ROUTER_VS_EVOLVED_CATEGORY_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_category_summary.tsv"
+OVERALL_SUMMARY="$REPEAT_DIR/question_router_${ROUTER_MODE}_overall_summary.tsv"
 
 python -B scripts/summarize_locomo_repeat_categories.py \
     "$ROUTER_SUMMARY" \
@@ -87,6 +127,13 @@ python -B scripts/compare_locomo_repeat_questions.py \
 
 python -B scripts/summarize_question_compare_deltas.py "$ROUTER_VS_EVOLVED"
 
+{
+    printf "label\tn\tf1_mean\tf1_std\tllm_judge_mean\tllm_judge_std\tconfig\n"
+    summarize_repeat_config "pruned_bad3" "$BASELINE_SUMMARY" "$BASELINE_CONFIG"
+    summarize_repeat_config "evolved_checkpoint" "$EVOLVED_SUMMARY" "$EVOLVED_CONFIG"
+    summarize_repeat_config "$ROUTER_CONFIG" "$ROUTER_SUMMARY" "$ROUTER_CONFIG"
+} > "$OVERALL_SUMMARY"
+
 echo
 echo "================================================================================"
 echo "Router v2 materialized analysis outputs"
@@ -97,8 +144,13 @@ echo "router_vs_pruned_bad3=$ROUTER_VS_BASELINE"
 echo "router_vs_pruned_bad3_category_summary=$ROUTER_VS_BASELINE_CATEGORY_SUMMARY"
 echo "router_vs_evolved_checkpoint=$ROUTER_VS_EVOLVED"
 echo "router_vs_evolved_checkpoint_category_summary=$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
+echo "overall_summary=$OVERALL_SUMMARY"
 echo
 
+echo "Overall repeat summary"
+column -t -s $'\t' "$OVERALL_SUMMARY" || cat "$OVERALL_SUMMARY"
+
+echo
 echo "Router category summary"
 column -t -s $'\t' "$ROUTER_CATEGORY_SUMMARY" || cat "$ROUTER_CATEGORY_SUMMARY"
 

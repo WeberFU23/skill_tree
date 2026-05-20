@@ -459,8 +459,9 @@ and memory construction also introduce run-to-run variance.
    bash scripts/analyze_question_router_v2_materialized.sh
    ```
 
-   Then decide whether to implement the same question-text route inside an
-   end-to-end eval script.
+   This prints an overall three-config table, the router category summary, and
+   router-vs-parent category deltas. Then decide whether to implement the same
+   question-text route inside an end-to-end eval script.
 14. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 15. Keep fine-tuning/RL over negative examples as a later phase. The current
