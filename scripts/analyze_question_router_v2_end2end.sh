@@ -98,6 +98,8 @@ ROUTER_VS_BASELINE="$END2END_DIR/question_compare_${ROUTER_CONFIG}_vs_pruned_bad
 ROUTER_VS_EVOLVED="$END2END_DIR/question_compare_${ROUTER_CONFIG}_vs_evolved_checkpoint_all.tsv"
 ROUTER_VS_BASELINE_CATEGORY_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_category_summary.tsv"
 ROUTER_VS_EVOLVED_CATEGORY_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_category_summary.tsv"
+ROUTER_VS_BASELINE_REASON_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_candidate_router_category_reason_summary.tsv"
+ROUTER_VS_EVOLVED_REASON_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_candidate_router_category_reason_summary.tsv"
 
 python -B scripts/summarize_locomo_repeat_categories.py \
     "$END2END_SUMMARY" \
@@ -111,6 +113,10 @@ python -B scripts/compare_locomo_repeat_questions.py \
     --out "$ROUTER_VS_BASELINE"
 
 python -B scripts/summarize_question_compare_deltas.py "$ROUTER_VS_BASELINE"
+python -B scripts/summarize_question_compare_deltas.py \
+    "$ROUTER_VS_BASELINE" \
+    --group-by candidate_router_category_reason \
+    --out "$ROUTER_VS_BASELINE_REASON_SUMMARY"
 
 python -B scripts/compare_locomo_repeat_questions.py \
     --summary-tsv "$EVOLVED_SUMMARY" "$END2END_SUMMARY" \
@@ -119,6 +125,10 @@ python -B scripts/compare_locomo_repeat_questions.py \
     --out "$ROUTER_VS_EVOLVED"
 
 python -B scripts/summarize_question_compare_deltas.py "$ROUTER_VS_EVOLVED"
+python -B scripts/summarize_question_compare_deltas.py \
+    "$ROUTER_VS_EVOLVED" \
+    --group-by candidate_router_category_reason \
+    --out "$ROUTER_VS_EVOLVED_REASON_SUMMARY"
 
 {
     printf "label\tn\tf1_mean\tf1_std\tllm_judge_mean\tllm_judge_std\tconfig\n"
@@ -141,8 +151,10 @@ echo "category_summary=$CATEGORY_SUMMARY"
 echo "overall_summary=$OVERALL_SUMMARY"
 echo "router_vs_pruned_bad3=$ROUTER_VS_BASELINE"
 echo "router_vs_pruned_bad3_category_summary=$ROUTER_VS_BASELINE_CATEGORY_SUMMARY"
+echo "router_vs_pruned_bad3_reason_summary=$ROUTER_VS_BASELINE_REASON_SUMMARY"
 echo "router_vs_evolved_checkpoint=$ROUTER_VS_EVOLVED"
 echo "router_vs_evolved_checkpoint_category_summary=$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
+echo "router_vs_evolved_checkpoint_reason_summary=$ROUTER_VS_EVOLVED_REASON_SUMMARY"
 echo "report=$REPORT_FILE"
 echo
 
@@ -160,3 +172,7 @@ column -t -s $'\t' "$ROUTER_VS_BASELINE_CATEGORY_SUMMARY" || cat "$ROUTER_VS_BAS
 echo
 echo "End-to-end router vs evolved checkpoint category deltas"
 column -t -s $'\t' "$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY" || cat "$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
+
+echo
+echo "End-to-end router vs evolved checkpoint route-reason deltas"
+column -t -s $'\t' "$ROUTER_VS_EVOLVED_REASON_SUMMARY" || cat "$ROUTER_VS_EVOLVED_REASON_SUMMARY"

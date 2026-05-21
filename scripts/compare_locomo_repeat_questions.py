@@ -24,6 +24,8 @@ F1_KEYS = ("f1", "f1_score", "score")
 JUDGE_KEYS = ("llm_judge", "llm_judge_score", "judge", "judge_score")
 CATEGORY_KEYS = ("category", "question_type", "type")
 ID_KEYS = ("qid", "qa_idx", "query_id", "question_id", "id")
+ROUTER_SELECTED_KEYS = ("router_selected", "selected_route", "selected")
+ROUTER_REASON_KEYS = ("router_reason", "selected_reason", "reason")
 
 
 def read_json(path: Path) -> Any:
@@ -124,6 +126,8 @@ def load_records(path: Path) -> List[Record]:
             "llm_judge": as_float(pick(row, JUDGE_KEYS)),
             "retrieved_memories": row.get("retrieved_memories", []),
             "negative_memories": row.get("negative_memories", []),
+            "router_selected": stringify(pick(row, ROUTER_SELECTED_KEYS)),
+            "router_reason": stringify(pick(row, ROUTER_REASON_KEYS)),
             "source_file": str(path),
         }
         records.append(record)
@@ -203,6 +207,13 @@ def compare_pair(
             "baseline_llm_judge": format_metric(base_judge),
             "candidate_llm_judge": format_metric(cand_judge),
             "delta_llm_judge": format_delta(delta_judge),
+            "baseline_router_selected": str(base.get("router_selected") or ""),
+            "candidate_router_selected": str(cand.get("router_selected") or ""),
+            "baseline_router_reason": str(base.get("router_reason") or ""),
+            "candidate_router_reason": str(cand.get("router_reason") or ""),
+            "candidate_router_category_reason": (
+                f"cat{category}|{str(cand.get('router_selected') or '')}|{str(cand.get('router_reason') or '')}"
+            ),
             "baseline_negative_memories": compact_list(base.get("negative_memories"), max_context_items, max_context_chars),
             "candidate_negative_memories": compact_list(cand.get("negative_memories"), max_context_items, max_context_chars),
             "baseline_retrieved_memories": compact_list(base.get("retrieved_memories"), max_context_items, max_context_chars),
@@ -260,6 +271,11 @@ def write_rows(path: Path, rows: List[Dict[str, str]]) -> None:
         "baseline_llm_judge",
         "candidate_llm_judge",
         "delta_llm_judge",
+        "baseline_router_selected",
+        "candidate_router_selected",
+        "baseline_router_reason",
+        "candidate_router_reason",
+        "candidate_router_category_reason",
         "baseline_negative_memories",
         "candidate_negative_memories",
         "baseline_retrieved_memories",

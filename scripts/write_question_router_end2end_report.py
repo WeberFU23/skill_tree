@@ -16,6 +16,12 @@ def read_rows(path: Path) -> List[Row]:
         return list(csv.DictReader(handle, delimiter="\t"))
 
 
+def read_optional_rows(path: Path) -> List[Row]:
+    if not path.exists():
+        return []
+    return read_rows(path)
+
+
 def markdown_table(rows: Iterable[Row], columns: List[str], headers: List[str] | None = None) -> List[str]:
     rows = list(rows)
     headers = headers or columns
@@ -64,11 +70,19 @@ def main() -> int:
     category_path = repeat_dir / "category_summary.tsv"
     vs_pruned_path = repeat_dir / f"question_compare_{args.router_config}_vs_pruned_bad3_all_category_summary.tsv"
     vs_evolved_path = repeat_dir / f"question_compare_{args.router_config}_vs_evolved_checkpoint_all_category_summary.tsv"
+    vs_pruned_reason_path = repeat_dir / (
+        f"question_compare_{args.router_config}_vs_pruned_bad3_all_candidate_router_category_reason_summary.tsv"
+    )
+    vs_evolved_reason_path = repeat_dir / (
+        f"question_compare_{args.router_config}_vs_evolved_checkpoint_all_candidate_router_category_reason_summary.tsv"
+    )
 
     overall_rows = read_rows(overall_path)
     category_rows = read_rows(category_path)
     vs_pruned_rows = read_rows(vs_pruned_path)
     vs_evolved_rows = read_rows(vs_evolved_path)
+    vs_pruned_reason_rows = read_optional_rows(vs_pruned_reason_path)
+    vs_evolved_reason_rows = read_optional_rows(vs_evolved_reason_path)
 
     router = pick_row(overall_rows, "label", args.router_config)
     pruned = pick_row(overall_rows, "label", "pruned_bad3")
@@ -145,13 +159,80 @@ def main() -> int:
             ["Category", "Rows", "Wins", "Losses", "Ties", "Delta F1", "Delta Judge", "Sum F1", "Sum Judge"],
         ),
         "",
+    ]
+
+    if vs_evolved_reason_rows:
+        lines.extend([
+            "## Route Reasons vs Evolved Checkpoint",
+            "",
+            *markdown_table(
+                vs_evolved_reason_rows,
+                [
+                    "candidate_router_category_reason",
+                    "rows",
+                    "wins",
+                    "losses",
+                    "ties",
+                    "mean_delta_f1",
+                    "mean_delta_llm_judge",
+                    "sum_delta_f1",
+                    "sum_delta_llm_judge",
+                ],
+                [
+                    "Route Reason",
+                    "Rows",
+                    "Wins",
+                    "Losses",
+                    "Ties",
+                    "Delta F1",
+                    "Delta Judge",
+                    "Sum F1",
+                    "Sum Judge",
+                ],
+            ),
+            "",
+        ])
+
+    if vs_pruned_reason_rows:
+        lines.extend([
+            "## Route Reasons vs Pruned Bad3",
+            "",
+            *markdown_table(
+                vs_pruned_reason_rows,
+                [
+                    "candidate_router_category_reason",
+                    "rows",
+                    "wins",
+                    "losses",
+                    "ties",
+                    "mean_delta_f1",
+                    "mean_delta_llm_judge",
+                    "sum_delta_f1",
+                    "sum_delta_llm_judge",
+                ],
+                [
+                    "Route Reason",
+                    "Rows",
+                    "Wins",
+                    "Losses",
+                    "Ties",
+                    "Delta F1",
+                    "Delta Judge",
+                    "Sum F1",
+                    "Sum Judge",
+                ],
+            ),
+            "",
+        ])
+
+    lines.extend([
         "## Readout",
         "",
         "- This is now a formal eval path, not a post-hoc splice of parent JSON outputs.",
         "- Compare this report with the materialized diagnostic before treating the router as stable.",
         "- The next paper-grade step is to validate on a larger split or a second long-memory benchmark.",
         "",
-    ]
+    ])
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text("\n".join(lines), encoding="utf-8")

@@ -625,7 +625,9 @@ The 2026-05-21 end-to-end router repeat reached F1 `0.2424 +/- 0.0204`
 and LLM Judge `0.3530 +/- 0.0248`. This is now the formal router result:
 F1 is close to the materialized diagnostic and still above both parent
 configs, while Judge is higher than the materialized diagnostic and both
-parents.
+parents. The analysis script also writes route-reason delta summaries so the
+next router change can target specific Cat1-harmful rules instead of adding
+new broad patterns.
 
 The older materialized diagnostic script still writes:
 

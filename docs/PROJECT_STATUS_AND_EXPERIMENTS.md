@@ -344,6 +344,10 @@ and memory construction also introduce run-to-run variance.
     formal method rather than only a diagnostic. It slightly trails the
     materialized diagnostic on F1 (0.2447) but exceeds it on Judge (0.3296),
     and it beats both parent repeated configs on both headline metrics.
+38. The end-to-end analysis workflow now preserves router metadata in
+    question-level comparisons and writes route-reason delta summaries. Use
+    these summaries to decide whether Cat1-harmful baseline routes such as
+    broad profile patterns should be pruned in a v3 router.
 
 ## Recommended Next Experiments
 
@@ -495,7 +499,8 @@ and memory construction also introduce run-to-run variance.
 
    This has now produced the first formal repeat: F1 0.2424 +/- 0.0204 and
    LLM Judge 0.3530 +/- 0.0248. Use the analysis script to inspect category
-   deltas against both parent configs before changing the router rules again.
+   and route-reason deltas against both parent configs before changing the
+   router rules again.
 
 14. Keep the materialized `risk_profile_baseline_v2` repeat summary as an
    analysis and sanity-check artifact:
