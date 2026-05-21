@@ -629,6 +629,19 @@ parents. The analysis script also writes route-reason delta summaries so the
 next router change can target specific Cat1-harmful rules instead of adding
 new broad patterns.
 
+The route-reason readout points to a conservative v3: remove the harmful
+`what kind of` baseline route and the `would ... prefer` route, while keeping
+`who`, `how long`, `how many times`, and country/state/location rules. Run the
+formal v3 repeat with:
+
+```bash
+QUESTION_ROUTER_MODE=risk_profile_baseline_v3 \
+  REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+ROUTER_MODE=risk_profile_baseline_v3 \
+  bash scripts/analyze_question_router_v2_end2end.sh
+```
+
 The older materialized diagnostic script still writes:
 
 - `*_selected.tsv`: one row per question with selected prediction/reason.

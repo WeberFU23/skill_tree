@@ -374,7 +374,7 @@ def main() -> int:
     parser.add_argument("question_compare_tsv", type=Path)
     parser.add_argument(
         "--mode",
-        choices=["risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2", "candidate_all", "baseline_all"],
+        choices=["risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2", "risk_profile_baseline_v3", "candidate_all", "baseline_all"],
         default="risk_baseline_v1",
     )
     parser.add_argument("--out", type=Path, default=None)

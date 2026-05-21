@@ -420,7 +420,7 @@ def get_agentic_memory_args():
     parser.add_argument('--enable-question-router-eval', action='store_true',
                         help='Run LoCoMo eval with a text question router over two checkpoints')
     parser.add_argument('--question-router-mode', type=str, default='risk_profile_baseline_v2',
-                        choices=['risk_baseline_v1', 'risk_profile_baseline_v1', 'risk_profile_baseline_v2', 'candidate_all', 'baseline_all'],
+                        choices=['risk_baseline_v1', 'risk_profile_baseline_v1', 'risk_profile_baseline_v2', 'risk_profile_baseline_v3', 'candidate_all', 'baseline_all'],
                         help='Question-text router mode for --enable-question-router-eval')
     parser.add_argument('--router-baseline-checkpoint', type=str, default=None,
                         help='Baseline checkpoint used when the question router selects baseline')

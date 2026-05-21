@@ -348,6 +348,10 @@ and memory construction also introduce run-to-run variance.
     question-level comparisons and writes route-reason delta summaries. Use
     these summaries to decide whether Cat1-harmful baseline routes such as
     broad profile patterns should be pruned in a v3 router.
+39. The next conservative router mode is `risk_profile_baseline_v3`. It removes
+    the end-to-end harmful `what kind of` baseline route and the harmful
+    `would ... prefer` risk route, while keeping `who`, `how long`,
+    `how many times`, `which country/state`, and `does ... live close`.
 
 ## Recommended Next Experiments
 
@@ -511,9 +515,21 @@ and memory construction also introduce run-to-run variance.
 
    This prints an overall three-config table, the router category summary, and
    router-vs-parent category deltas, and writes a compact markdown report.
-15. Run on a larger split or another long-memory benchmark after the small
+15. Run the conservative v3 router after inspecting the v2 route-reason deltas:
+
+   ```bash
+   QUESTION_ROUTER_MODE=risk_profile_baseline_v3 \
+     REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+   ROUTER_MODE=risk_profile_baseline_v3 \
+     bash scripts/analyze_question_router_v2_end2end.sh
+   ```
+
+   The expected effect is reduced Cat1/Cat4 damage from broad `what kind of`
+   baseline routing, while preserving country/state and `who` recovery.
+16. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-16. Keep fine-tuning/RL over negative examples as a later phase. The current
+17. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

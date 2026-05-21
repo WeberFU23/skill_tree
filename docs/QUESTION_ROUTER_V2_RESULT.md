@@ -60,3 +60,6 @@ keeps the materialized diagnostic because it explains why the route was chosen.
 - The first end-to-end repeat validates the method path: F1 remains above both
   parents and close to the materialized diagnostic, while Judge becomes the
   strongest repeated score so far.
+- Route-reason analysis suggests the next conservative mode,
+  `risk_profile_baseline_v3`, should remove `what kind of` and
+  `would ... prefer` baseline routes before another repeat.

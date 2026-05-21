@@ -58,6 +58,21 @@ BASELINE_PROFILE_STRONG_PATTERNS = compile_patterns([
 ])
 
 
+BASELINE_RISK_V3_PATTERNS = compile_patterns([
+    r"\bwhich country\b",
+    r"\bwhich us state\b",
+    r"\bwhich state\b",
+    r"\bdoes\b.+\blive close\b",
+])
+
+
+BASELINE_PROFILE_V3_PATTERNS = compile_patterns([
+    r"^who\b",
+    r"\bhow many times\b",
+    r"\bhow long\b",
+])
+
+
 def normalize_question(question: str) -> str:
     return " ".join((question or "").strip().lower().split())
 
@@ -68,7 +83,7 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
         return "candidate", "candidate_all"
     if mode == "baseline_all":
         return "baseline", "baseline_all"
-    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2"}:
+    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2", "risk_profile_baseline_v3"}:
         raise ValueError(f"Unknown router mode: {mode}")
 
     risk_patterns = BASELINE_RISK_PATTERNS
@@ -76,11 +91,14 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
     if mode == "risk_profile_baseline_v2":
         risk_patterns = BASELINE_RISK_STRONG_PATTERNS
         profile_patterns = BASELINE_PROFILE_STRONG_PATTERNS
+    elif mode == "risk_profile_baseline_v3":
+        risk_patterns = BASELINE_RISK_V3_PATTERNS
+        profile_patterns = BASELINE_PROFILE_V3_PATTERNS
 
     for pattern in risk_patterns:
         if pattern.search(text):
             return "baseline", f"risk:{pattern.pattern}"
-    if mode in {"risk_profile_baseline_v1", "risk_profile_baseline_v2"}:
+    if mode in {"risk_profile_baseline_v1", "risk_profile_baseline_v2", "risk_profile_baseline_v3"}:
         for pattern in profile_patterns:
             if pattern.search(text):
                 return "baseline", f"profile:{pattern.pattern}"
