@@ -169,6 +169,8 @@ and memory construction also introduce run-to-run variance.
 | Pruned bad3 evolved-checkpoint eval | Evaluate checkpoint after isolated skill-tree-evolution training | copied `skills_memory/`, pruned bad3, top1, 1200 chars; evolution applied 0 skill-tree changes | 0.2534 | 0.3694 | Strong single run; diff showed no skill-tree edits, so the gain is from the trained checkpoint and needs repeat validation |
 | Pruned bad3 evolved-checkpoint repeat | Repeat the checkpoint produced by isolated pruned-bad3 training | same copied skill tree and final checkpoint from `skill_tree_evolution_pruned_bad3_20260519_134600` | 0.2377 +/- 0.0103 | 0.3217 +/- 0.0145 | New best repeated setting so far, but the gain is from checkpoint training, not skill-tree markdown evolution |
 | Pruned bad3 evolved-checkpoint category summary | Diagnose the evolved-checkpoint repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1633 / 0.2151 / 0.4742 / 0.2495 | 0.2705 / 0.1769 / 0.5667 / 0.3719 | Biggest repeat improvement over pruned bad3 is category 2 Judge and category 4; category 3 F1 is weaker than pruned bad3 |
+| Question-router v2 materialized repeat | Route between pruned bad3 and evolved checkpoint with question-text rules | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | Best current LoCoMo10 development result; assembled from repeated parent outputs, not yet a single-pass eval |
+| Question-router v2 category summary | Diagnose the materialized router result | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1691 / 0.2177 / 0.5602 / 0.2489 | 0.2826 / 0.1769 / 0.6500 / 0.3719 | Recovers evolved-checkpoint Cat3 loss while preserving most Cat2/Cat4 gains; Cat1 remains the residual weakness |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -185,9 +187,9 @@ and memory construction also introduce run-to-run variance.
 4. Aggregate curated memories are more promising because one curated lesson can
    keep multiple concrete `Question -> Expected` examples from the cluster.
 5. Skill-tree evolution is wired. The isolated pruned-bad3 run processed hard
-   cases but applied 0 skill-tree changes. Its repeated eval is the best
-   repeated setting so far, but this is evidence for checkpoint training under
-   fixed pruned-bad3 negative memory rather than evolved skill definitions.
+   cases but applied 0 skill-tree changes. Its repeated eval improved over
+   pruned bad3, but this is evidence for checkpoint training under fixed
+   pruned-bad3 negative memory rather than evolved skill definitions.
 6. The legacy MemSkill `--enable-designer` can now be run as an explicit
    skill-tree ablation. In the current architecture it evolves the flat
    operation bank, while the skill-tree execution path is edited by
@@ -318,6 +320,9 @@ and memory construction also introduce run-to-run variance.
     0.2177 / 0.1769, Cat3 0.5602 / 0.6500, Cat4 0.2489 / 0.3719. This
     preserves the evolved-checkpoint gains on Cat2/Cat4 and recovers Cat3
     beyond the pruned-bad3 baseline, while Cat1 remains the main regression.
+34. The tracked report is `docs/QUESTION_ROUTER_V2_RESULT.md`. The generated
+    source report lives under the ignored `results/` tree, so keep the tracked
+    copy updated when rerunning router diagnostics.
 
 ## Recommended Next Experiments
 
