@@ -323,6 +323,10 @@ and memory construction also introduce run-to-run variance.
 34. The tracked report is `docs/QUESTION_ROUTER_V2_RESULT.md`. The generated
     source report lives under the ignored `results/` tree, so keep the tracked
     copy updated when rerunning router diagnostics.
+35. The analysis workflow also writes a canonical ignored repeat directory,
+    `question_router_risk_profile_baseline_v2_repeat/`, with `summary.tsv`,
+    per-run JSON/log outputs, category summary, overall summary, and report.
+    Use that directory when treating router v2 like a normal repeat config.
 
 ## Recommended Next Experiments
 

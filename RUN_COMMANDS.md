@@ -623,11 +623,19 @@ column -t -s $'\t' \
 
 sed -n '1,120p' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_report.md
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_repeat/summary.tsv
+
+sed -n '1,120p' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_repeat/report.md
 ```
 
 The analysis script auto-generates the all-question baseline-vs-evolved compare
 TSV if it is missing, then materializes the router summary if needed and writes
-`question_router_risk_profile_baseline_v2_report.md`.
+`question_router_risk_profile_baseline_v2_report.md`. It also writes a
+canonical materialized repeat directory:
+`question_router_risk_profile_baseline_v2_repeat/`.
 
 Latest core-config repeat on 2026-05-16:
 

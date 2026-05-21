@@ -106,6 +106,8 @@ ROUTER_VS_BASELINE_CATEGORY_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_category_summary
 ROUTER_VS_EVOLVED_CATEGORY_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_category_summary.tsv"
 OVERALL_SUMMARY="$REPEAT_DIR/question_router_${ROUTER_MODE}_overall_summary.tsv"
 REPORT_FILE="$REPEAT_DIR/question_router_${ROUTER_MODE}_report.md"
+ROUTER_REPEAT_DIR="${ROUTER_REPEAT_DIR:-$REPEAT_DIR/question_router_${ROUTER_MODE}_repeat}"
+ROUTER_MATERIALIZED_DIR="${ROUTER_SUMMARY%_repeat_summary.tsv}_materialized"
 
 python -B scripts/summarize_locomo_repeat_categories.py \
     "$ROUTER_SUMMARY" \
@@ -141,6 +143,43 @@ python -B scripts/write_question_router_report.py \
     --router-config "$ROUTER_CONFIG" \
     --out "$REPORT_FILE"
 
+if [[ -d "$ROUTER_MATERIALIZED_DIR" ]]; then
+    mkdir -p "$ROUTER_REPEAT_DIR/logs"
+    find "$ROUTER_MATERIALIZED_DIR" -maxdepth 1 -type f -name '*.json' \
+        -exec cp {} "$ROUTER_REPEAT_DIR/" \;
+    if [[ -d "$ROUTER_MATERIALIZED_DIR/logs" ]]; then
+        find "$ROUTER_MATERIALIZED_DIR/logs" -maxdepth 1 -type f -name '*.log' \
+            -exec cp {} "$ROUTER_REPEAT_DIR/logs/" \;
+    fi
+    awk -F '\t' -v OFS='\t' -v repeat_dir="$ROUTER_REPEAT_DIR" '
+    NR == 1 {
+        for (i = 1; i <= NF; i++) {
+            if ($i == "log") {
+                log_col = i
+            }
+            if ($i == "out_file") {
+                out_col = i
+            }
+        }
+        print
+        next
+    }
+    {
+        if (log_col) {
+            n = split($log_col, log_parts, "/")
+            $log_col = repeat_dir "/logs/" log_parts[n]
+        }
+        if (out_col) {
+            n = split($out_col, out_parts, "/")
+            $out_col = repeat_dir "/" out_parts[n]
+        }
+        print
+    }' "$ROUTER_SUMMARY" > "$ROUTER_REPEAT_DIR/summary.tsv"
+    cp "$OVERALL_SUMMARY" "$ROUTER_REPEAT_DIR/overall_summary.tsv"
+    cp "$ROUTER_CATEGORY_SUMMARY" "$ROUTER_REPEAT_DIR/category_summary.tsv"
+    cp "$REPORT_FILE" "$ROUTER_REPEAT_DIR/report.md"
+fi
+
 echo
 echo "================================================================================"
 echo "Router v2 materialized analysis outputs"
@@ -153,6 +192,9 @@ echo "router_vs_evolved_checkpoint=$ROUTER_VS_EVOLVED"
 echo "router_vs_evolved_checkpoint_category_summary=$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
 echo "overall_summary=$OVERALL_SUMMARY"
 echo "report=$REPORT_FILE"
+echo "canonical_repeat_dir=$ROUTER_REPEAT_DIR"
+echo "canonical_repeat_summary=$ROUTER_REPEAT_DIR/summary.tsv"
+echo "canonical_report=$ROUTER_REPEAT_DIR/report.md"
 echo
 
 echo "Overall repeat summary"
