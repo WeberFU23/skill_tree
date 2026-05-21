@@ -109,6 +109,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/evaluate_question_compare_hybrid.py` | Compute an oracle category-routed hybrid from a question comparison TSV |
 | `scripts/evaluate_question_compare_question_router.py` | Evaluate a text-only router between two configs from question comparison rows |
 | `scripts/analyze_question_router_v2_materialized.sh` | Build missing question-compare/router artifacts and analyze the materialized v2 question-router summary against pruned bad3 and evolved checkpoint repeats |
+| `scripts/write_question_router_report.py` | Export a compact markdown report from materialized question-router TSV outputs |
 | `scripts/summarize_question_compare_deltas.py` | Summarize question-level comparison deltas by category or another TSV column |
 | `scripts/summarize_question_compare_context_changes.py` | Quantify whether retrieved QA or negative-memory context changed between two configs |
 | `scripts/show_question_compare_examples.py` | Print readable worst/best examples from a question comparison TSV |
@@ -460,8 +461,9 @@ and memory construction also introduce run-to-run variance.
    ```
 
    This prints an overall three-config table, the router category summary, and
-   router-vs-parent category deltas. Then decide whether to implement the same
-   question-text route inside an end-to-end eval script.
+   router-vs-parent category deltas, and writes a compact markdown report. Then
+   decide whether to implement the same question-text route inside an
+   end-to-end eval script.
 14. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 15. Keep fine-tuning/RL over negative examples as a later phase. The current

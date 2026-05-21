@@ -105,6 +105,7 @@ ROUTER_VS_EVOLVED="$REPEAT_DIR/question_compare_${ROUTER_CONFIG}_vs_evolved_chec
 ROUTER_VS_BASELINE_CATEGORY_SUMMARY="${ROUTER_VS_BASELINE%.tsv}_category_summary.tsv"
 ROUTER_VS_EVOLVED_CATEGORY_SUMMARY="${ROUTER_VS_EVOLVED%.tsv}_category_summary.tsv"
 OVERALL_SUMMARY="$REPEAT_DIR/question_router_${ROUTER_MODE}_overall_summary.tsv"
+REPORT_FILE="$REPEAT_DIR/question_router_${ROUTER_MODE}_report.md"
 
 python -B scripts/summarize_locomo_repeat_categories.py \
     "$ROUTER_SUMMARY" \
@@ -134,6 +135,12 @@ python -B scripts/summarize_question_compare_deltas.py "$ROUTER_VS_EVOLVED"
     summarize_repeat_config "$ROUTER_CONFIG" "$ROUTER_SUMMARY" "$ROUTER_CONFIG"
 } > "$OVERALL_SUMMARY"
 
+python -B scripts/write_question_router_report.py \
+    --repeat-dir "$REPEAT_DIR" \
+    --router-mode "$ROUTER_MODE" \
+    --router-config "$ROUTER_CONFIG" \
+    --out "$REPORT_FILE"
+
 echo
 echo "================================================================================"
 echo "Router v2 materialized analysis outputs"
@@ -145,6 +152,7 @@ echo "router_vs_pruned_bad3_category_summary=$ROUTER_VS_BASELINE_CATEGORY_SUMMAR
 echo "router_vs_evolved_checkpoint=$ROUTER_VS_EVOLVED"
 echo "router_vs_evolved_checkpoint_category_summary=$ROUTER_VS_EVOLVED_CATEGORY_SUMMARY"
 echo "overall_summary=$OVERALL_SUMMARY"
+echo "report=$REPORT_FILE"
 echo
 
 echo "Overall repeat summary"

@@ -620,10 +620,14 @@ column -t -s $'\t' \
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_compare_question_router_risk_profile_baseline_v2_vs_evolved_checkpoint_all_category_summary.tsv
+
+sed -n '1,120p' \
+  results/skill_tree_evolution_pruned_bad3_20260519_134600/repeat_eval_20260519_144233/question_router_risk_profile_baseline_v2_report.md
 ```
 
 The analysis script auto-generates the all-question baseline-vs-evolved compare
-TSV if it is missing, then materializes the router summary if needed.
+TSV if it is missing, then materializes the router summary if needed and writes
+`question_router_risk_profile_baseline_v2_report.md`.
 
 Latest core-config repeat on 2026-05-16:
 
