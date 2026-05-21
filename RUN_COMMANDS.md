@@ -655,6 +655,25 @@ CANDIDATE_ROUTER_MODE=risk_profile_baseline_v3 \
   bash scripts/compare_question_router_end2end_versions.sh
 ```
 
+Direct v3-minus-v2 comparison shows v3 is mainly a Cat1 cleanup:
+Cat1 improves by `+0.0041` F1 and `+0.0193` Judge, while Cat2, Cat3, and Cat4
+lose F1. Cat3 is the largest regression (`-0.0469` F1, `-0.0750` Judge).
+
+The next narrow ablation is v4: remove only `what kind of` from v2 while
+keeping the `would ... prefer` risk route:
+
+```bash
+QUESTION_ROUTER_MODE=risk_profile_baseline_v4 \
+  REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+ROUTER_MODE=risk_profile_baseline_v4 \
+  bash scripts/analyze_question_router_v2_end2end.sh
+
+BASE_ROUTER_MODE=risk_profile_baseline_v2 \
+CANDIDATE_ROUTER_MODE=risk_profile_baseline_v4 \
+  bash scripts/compare_question_router_end2end_versions.sh
+```
+
 The older materialized diagnostic script still writes:
 
 - `*_selected.tsv`: one row per question with selected prediction/reason.

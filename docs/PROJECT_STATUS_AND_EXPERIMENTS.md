@@ -361,6 +361,11 @@ and memory construction also introduce run-to-run variance.
     `scripts/compare_question_router_end2end_versions.sh` to compare v3
     directly against v2 at the question/category/route-reason level before
     changing router rules again.
+41. Direct v3-minus-v2 comparison shows v3 is only a Cat1 cleanup: Cat1
+    improves by +0.0041 F1 and +0.0193 Judge, but Cat2, Cat3, and Cat4 lose
+    F1, with Cat3 dropping by -0.0469 F1 and -0.0750 Judge. The next narrow
+    ablation is `risk_profile_baseline_v4`, which removes only `what kind of`
+    from v2 while keeping the `would ... prefer` risk route.
 
 ## Recommended Next Experiments
 
@@ -536,9 +541,26 @@ and memory construction also introduce run-to-run variance.
    The 2026-05-21 repeat showed v3 is lower than v2 on headline F1 and Judge
    despite lower variance. Treat v3 as an informative ablation unless direct
    question-level deltas reveal a narrow rule worth carrying into a v4.
-16. Run on a larger split or another long-memory benchmark after the small
+16. Run the v4 isolating ablation if you want to test whether the useful part
+    of v3 is only the `what kind of` removal:
+
+   ```bash
+   QUESTION_ROUTER_MODE=risk_profile_baseline_v4 \
+     REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+   ROUTER_MODE=risk_profile_baseline_v4 \
+     bash scripts/analyze_question_router_v2_end2end.sh
+
+   BASE_ROUTER_MODE=risk_profile_baseline_v2 \
+   CANDIDATE_ROUTER_MODE=risk_profile_baseline_v4 \
+     bash scripts/compare_question_router_end2end_versions.sh
+   ```
+
+   This is not a promoted default. It is a controlled test of v2 minus only
+   the broad `what kind of` baseline route.
+17. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-17. Keep fine-tuning/RL over negative examples as a later phase. The current
+18. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

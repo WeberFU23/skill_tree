@@ -21,6 +21,12 @@ A conservative v3 end-to-end repeat was also tested after pruning the harmful
 routed to the baseline. This is more conservative but weaker than v2, so v2
 remains the current formal router.
 
+The direct v3-minus-v2 comparison shows why v3 should stay an ablation:
+Cat1 improves slightly (+0.0041 F1, +0.0193 Judge), but Cat2, Cat3, and Cat4
+drop on F1, with Cat3 taking the largest hit (-0.0469 F1, -0.0750 Judge).
+The next narrow ablation is `risk_profile_baseline_v4`: remove only
+`what kind of`, but keep the v2 `would ... prefer` route.
+
 ## Formal End-to-End Repeats
 
 | Config | n | F1 Mean | F1 Std | Judge Mean | Judge Std | Baseline Rows |
@@ -79,3 +85,5 @@ remains the current formal router.
   and Judge relative to v2; keep v3 as an ablation, not the promoted method.
 - Use `scripts/compare_question_router_end2end_versions.sh` to inspect direct
   v3-minus-v2 question-level deltas before changing router rules again.
+- `risk_profile_baseline_v4` isolates the next test: v2 minus only the
+  `what kind of` route, retaining `would ... prefer`.

@@ -83,7 +83,13 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
         return "candidate", "candidate_all"
     if mode == "baseline_all":
         return "baseline", "baseline_all"
-    if mode not in {"risk_baseline_v1", "risk_profile_baseline_v1", "risk_profile_baseline_v2", "risk_profile_baseline_v3"}:
+    if mode not in {
+        "risk_baseline_v1",
+        "risk_profile_baseline_v1",
+        "risk_profile_baseline_v2",
+        "risk_profile_baseline_v3",
+        "risk_profile_baseline_v4",
+    }:
         raise ValueError(f"Unknown router mode: {mode}")
 
     risk_patterns = BASELINE_RISK_PATTERNS
@@ -94,11 +100,19 @@ def route_question(question: str, mode: str) -> Tuple[str, str]:
     elif mode == "risk_profile_baseline_v3":
         risk_patterns = BASELINE_RISK_V3_PATTERNS
         profile_patterns = BASELINE_PROFILE_V3_PATTERNS
+    elif mode == "risk_profile_baseline_v4":
+        risk_patterns = BASELINE_RISK_STRONG_PATTERNS
+        profile_patterns = BASELINE_PROFILE_V3_PATTERNS
 
     for pattern in risk_patterns:
         if pattern.search(text):
             return "baseline", f"risk:{pattern.pattern}"
-    if mode in {"risk_profile_baseline_v1", "risk_profile_baseline_v2", "risk_profile_baseline_v3"}:
+    if mode in {
+        "risk_profile_baseline_v1",
+        "risk_profile_baseline_v2",
+        "risk_profile_baseline_v3",
+        "risk_profile_baseline_v4",
+    }:
         for pattern in profile_patterns:
             if pattern.search(text):
                 return "baseline", f"profile:{pattern.pattern}"
