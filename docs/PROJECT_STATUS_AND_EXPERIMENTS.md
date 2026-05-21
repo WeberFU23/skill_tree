@@ -1,6 +1,6 @@
 # Project Status and Experiment Record
 
-Last updated: 2026-05-19
+Last updated: 2026-05-21
 
 ## Project Goal
 
@@ -106,6 +106,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/eval_locomo_question_router_v2_end2end.sh` | Run the true question-router v2 eval path, routing each LoCoMo question before answer generation |
 | `scripts/repeat_locomo_question_router_v2_end2end.sh` | Repeat the true question-router v2 eval path and write a normal repeat `summary.tsv` |
 | `scripts/analyze_question_router_v2_end2end.sh` | Analyze the true question-router v2 repeat with category summaries, parent comparisons, and a markdown report |
+| `scripts/compare_question_router_end2end_versions.sh` | Compare two true end-to-end router repeats, e.g. v3 minus v2, with question/category/reason deltas |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
@@ -175,6 +176,7 @@ and memory construction also introduce run-to-run variance.
 | Question-router v2 materialized repeat | Route between pruned bad3 and evolved checkpoint with question-text rules | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | Best current LoCoMo10 development result; assembled from repeated parent outputs, now implemented as a true eval entrypoint for validation |
 | Question-router v2 category summary | Diagnose the materialized router result | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1691 / 0.2177 / 0.5602 / 0.2489 | 0.2826 / 0.1769 / 0.6500 / 0.3719 | Recovers evolved-checkpoint Cat3 loss while preserving most Cat2/Cat4 gains; Cat1 remains the residual weakness |
 | Question-router v2 end-to-end repeat | Route between pruned bad3 and evolved checkpoint inside eval before answer generation | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2424 +/- 0.0204 | 0.3530 +/- 0.0248 | Formal router result: F1 stays above both parents and close to the materialized diagnostic; Judge is the strongest repeated score so far |
+| Question-router v3 end-to-end repeat | Prune broad harmful v2 baseline routes and rerun true router eval | `risk_profile_baseline_v3`, 17/314 rows per run routed to pruned bad3 | 0.2350 +/- 0.0032 | 0.3471 +/- 0.0107 | More conservative and stable, but weaker than v2; keep v2 as the current formal router |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -348,10 +350,17 @@ and memory construction also introduce run-to-run variance.
     question-level comparisons and writes route-reason delta summaries. Use
     these summaries to decide whether Cat1-harmful baseline routes such as
     broad profile patterns should be pruned in a v3 router.
-39. The next conservative router mode is `risk_profile_baseline_v3`. It removes
-    the end-to-end harmful `what kind of` baseline route and the harmful
+39. The conservative router mode `risk_profile_baseline_v3` removes the
+    end-to-end harmful `what kind of` baseline route and the harmful
     `would ... prefer` risk route, while keeping `who`, `how long`,
     `how many times`, `which country/state`, and `does ... live close`.
+    Its 2026-05-21 true end-to-end repeat reached F1 0.2350 +/- 0.0032
+    and LLM Judge 0.3471 +/- 0.0107. This improves stability but does not
+    beat v2, so v2 remains the promoted formal router result.
+40. Router version comparison is now a first-class workflow. Use
+    `scripts/compare_question_router_end2end_versions.sh` to compare v3
+    directly against v2 at the question/category/route-reason level before
+    changing router rules again.
 
 ## Recommended Next Experiments
 
@@ -515,18 +524,18 @@ and memory construction also introduce run-to-run variance.
 
    This prints an overall three-config table, the router category summary, and
    router-vs-parent category deltas, and writes a compact markdown report.
-15. Run the conservative v3 router after inspecting the v2 route-reason deltas:
+15. Compare the conservative v3 router against v2 directly before editing
+    router rules again:
 
    ```bash
-   QUESTION_ROUTER_MODE=risk_profile_baseline_v3 \
-     REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
-
-   ROUTER_MODE=risk_profile_baseline_v3 \
-     bash scripts/analyze_question_router_v2_end2end.sh
+   BASE_ROUTER_MODE=risk_profile_baseline_v2 \
+   CANDIDATE_ROUTER_MODE=risk_profile_baseline_v3 \
+     bash scripts/compare_question_router_end2end_versions.sh
    ```
 
-   The expected effect is reduced Cat1/Cat4 damage from broad `what kind of`
-   baseline routing, while preserving country/state and `who` recovery.
+   The 2026-05-21 repeat showed v3 is lower than v2 on headline F1 and Judge
+   despite lower variance. Treat v3 as an informative ablation unless direct
+   question-level deltas reveal a narrow rule worth carrying into a v4.
 16. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 17. Keep fine-tuning/RL over negative examples as a later phase. The current

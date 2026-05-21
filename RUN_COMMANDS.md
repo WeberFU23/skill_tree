@@ -642,6 +642,19 @@ ROUTER_MODE=risk_profile_baseline_v3 \
   bash scripts/analyze_question_router_v2_end2end.sh
 ```
 
+The 2026-05-21 v3 repeat reached F1 `0.2350 +/- 0.0032` and LLM Judge
+`0.3471 +/- 0.0107`, with 17/314 questions routed to the baseline. This is
+more stable but lower than v2 (`0.2424 +/- 0.0204`, `0.3530 +/- 0.0248`), so
+v2 remains the promoted formal router.
+
+Compare v3 directly against v2 at the question/category/route-reason level:
+
+```bash
+BASE_ROUTER_MODE=risk_profile_baseline_v2 \
+CANDIDATE_ROUTER_MODE=risk_profile_baseline_v3 \
+  bash scripts/compare_question_router_end2end_versions.sh
+```
+
 The older materialized diagnostic script still writes:
 
 - `*_selected.tsv`: one row per question with selected prediction/reason.

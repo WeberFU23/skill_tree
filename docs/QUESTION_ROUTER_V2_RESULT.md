@@ -15,7 +15,22 @@ The corresponding true end-to-end router repeat is now available as
 LLM Judge 0.3530 +/- 0.0248. That is the formal method result; the table below
 keeps the materialized diagnostic because it explains why the route was chosen.
 
-## Overall
+A conservative v3 end-to-end repeat was also tested after pruning the harmful
+`what kind of` and `would ... prefer` baseline routes. It scored F1
+0.2350 +/- 0.0032 and LLM Judge 0.3471 +/- 0.0107 with only 17/314 questions
+routed to the baseline. This is more conservative but weaker than v2, so v2
+remains the current formal router.
+
+## Formal End-to-End Repeats
+
+| Config | n | F1 Mean | F1 Std | Judge Mean | Judge Std | Baseline Rows |
+| --- | --- | --- | --- | --- | --- | --- |
+| pruned_bad3 | 3 | 0.2309 | 0.0169 | 0.3095 | 0.0106 | 314 |
+| evolved_checkpoint | 3 | 0.2377 | 0.0103 | 0.3217 | 0.0145 | 0 |
+| question_router_risk_profile_baseline_v2_end2end | 3 | 0.2424 | 0.0204 | 0.3530 | 0.0248 | 35 |
+| question_router_risk_profile_baseline_v3_end2end | 3 | 0.2350 | 0.0032 | 0.3471 | 0.0107 | 17 |
+
+## Materialized Diagnostic Overall
 
 | Config | n | F1 Mean | F1 Std | Judge Mean | Judge Std |
 | --- | --- | --- | --- | --- | --- |
@@ -60,6 +75,7 @@ keeps the materialized diagnostic because it explains why the route was chosen.
 - The first end-to-end repeat validates the method path: F1 remains above both
   parents and close to the materialized diagnostic, while Judge becomes the
   strongest repeated score so far.
-- Route-reason analysis suggests the next conservative mode,
-  `risk_profile_baseline_v3`, should remove `what kind of` and
-  `would ... prefer` baseline routes before another repeat.
+- The v3 conservative pruning pass improved stability but reduced headline F1
+  and Judge relative to v2; keep v3 as an ablation, not the promoted method.
+- Use `scripts/compare_question_router_end2end_versions.sh` to inspect direct
+  v3-minus-v2 question-level deltas before changing router rules again.

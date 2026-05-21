@@ -211,6 +211,9 @@ def compare_pair(
             "candidate_router_selected": str(cand.get("router_selected") or ""),
             "baseline_router_reason": str(base.get("router_reason") or ""),
             "candidate_router_reason": str(cand.get("router_reason") or ""),
+            "baseline_router_category_reason": (
+                f"cat{category}|{str(base.get('router_selected') or '')}|{str(base.get('router_reason') or '')}"
+            ),
             "candidate_router_category_reason": (
                 f"cat{category}|{str(cand.get('router_selected') or '')}|{str(cand.get('router_reason') or '')}"
             ),
@@ -275,6 +278,7 @@ def write_rows(path: Path, rows: List[Dict[str, str]]) -> None:
         "candidate_router_selected",
         "baseline_router_reason",
         "candidate_router_reason",
+        "baseline_router_category_reason",
         "candidate_router_category_reason",
         "baseline_negative_memories",
         "candidate_negative_memories",

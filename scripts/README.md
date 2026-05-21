@@ -31,6 +31,7 @@ Current scripts:
 | `repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `repeat_locomo_question_router_v2_end2end.sh` | Repeat the true question-router v2 eval and write a normal repeat `summary.tsv` |
 | `analyze_question_router_v2_end2end.sh` | Analyze the true question-router v2 repeat with category summaries, parent comparisons, and a markdown report |
+| `compare_question_router_end2end_versions.sh` | Compare two true end-to-end router repeats, e.g. v3 minus v2, with question/category/reason deltas |
 | `summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `compare_locomo_repeat_questions.py` | Compare detailed question-level JSON outputs between two configs, including retrieved memory and negative-memory context |
