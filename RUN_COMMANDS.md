@@ -593,10 +593,30 @@ Per-run router readout:
 | 2 | 35 | 279 | 0.2325 / 0.3153 | 0.2425 / 0.3185 | 0.2479 / 0.3280 |
 | 3 | 35 | 279 | 0.2095 / 0.2946 | 0.2473 / 0.3408 | 0.2416 / 0.3376 |
 
-Next step: materialize `risk_profile_baseline_v2` as a formal router artifact
-with selected per-run outputs and a repeat-style summary, then compare it as a
-normal config rather than only as a question-comparison diagnostic. The router
-script now writes:
+The materialized router artifact is now archived as a diagnostic. To turn the
+same route into a formal method, run the true end-to-end router entrypoint. This
+path routes each question before answer generation, choosing the pruned-bad3
+checkpoint or the evolved checkpoint inside `main.py`:
+
+```bash
+REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+column -t -s $'\t' \
+  results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/summary.tsv
+```
+
+For a single run:
+
+```bash
+bash scripts/eval_locomo_question_router_v2_end2end.sh
+```
+
+The single-run script auto-selects the newest
+`results/skill_tree_evolution_pruned_bad3_*` directory unless `RUN_DIR` is set.
+It defaults to `risk_profile_baseline_v2`, `locomo10.json`, pruned bad3
+negative memories, and top-1 / 1200-char negative-memory retrieval.
+
+The older materialized diagnostic script still writes:
 
 - `*_selected.tsv`: one row per question with selected prediction/reason.
 - `*_repeat_summary.tsv`: compatible config/run/F1/Judge/out_file summary.

@@ -7,16 +7,18 @@ import json
 import random
 import re
 import multiprocessing as mp
+from types import SimpleNamespace
 import numpy as np
 import torch
 from tqdm import tqdm
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 
 from src.config import AgenticMemoryConfig, get_agentic_memory_args
 from src.trainer import BaseTrainer, get_trainer
 from src.executor import ExecutionResult
 from src.memory_bank import MemoryBank
+from src.question_router import route_question
 from src.data_processing.alfworld import chunk_trajectories_by_tokens
 from rag_utils import get_embeddings
 from eval_utils import llm_judge
@@ -764,7 +766,252 @@ def evaluate_text_dataset_queries(trainer: BaseTrainer,
     return output
 
 
-def infer_text_dataset_memories(trainer: BaseTrainer, test_data, args):
+def evaluate_text_dataset_queries_with_router(
+    trainers: Dict[str, BaseTrainer],
+    test_data,
+    memory_banks_by_route: Dict[str, Dict[str, Any]],
+    args,
+) -> Dict[str, Any]:
+    eval_args_by_route = {
+        route: trainer.evaluator.prepare_eval_args()
+        for route, trainer in trainers.items()
+    }
+    top_k_by_route = {
+        route: getattr(trainer.config, "mem_top_k_eval", trainer.config.mem_top_k)
+        for route, trainer in trainers.items()
+    }
+    router_mode = getattr(args, "question_router_mode", "risk_profile_baseline_v2")
+    reference_trainer = trainers.get("candidate") or next(iter(trainers.values()))
+    is_hotpotqa = args.dataset == "hotpotqa"
+    extractor = getattr(reference_trainer.evaluator, "_extract_answer", None) if is_hotpotqa else None
+
+    task_args = []
+    meta_by_qid = {}
+    next_qid = 0
+    route_counts = {"baseline": 0, "candidate": 0}
+
+    for conv_idx, conversation in enumerate(test_data):
+        if args.dataset == "longmemeval":
+            question_id = str(conversation.get("question_id", ""))
+            if question_id.endswith("_abs"):
+                print(f"[RouterEval] Skipping _abs sample question_id={question_id}.")
+                continue
+        sample_id = _resolve_sample_id(reference_trainer, conversation, conv_idx)
+        qa_list = reference_trainer.data_processor.get_qa_list(conversation)
+        valid_qa = reference_trainer.evaluator.filter_qa_list(qa_list)
+        if not valid_qa:
+            print(f"[RouterEval] No valid QA items for sample_id={sample_id}, skipping.")
+            continue
+
+        embedding_batches: Dict[str, Tuple[List[Tuple[int, Dict[str, Any]]], Any]] = {}
+        grouped_qa: Dict[str, List[Tuple[int, Dict[str, Any]]]] = {"baseline": [], "candidate": []}
+        route_reasons: Dict[Tuple[str, int], str] = {}
+        for qa_idx, qa in valid_qa:
+            route, reason = route_question(qa.get("question", ""), router_mode)
+            grouped_qa.setdefault(route, []).append((qa_idx, qa))
+            route_reasons[(route, qa_idx)] = reason
+
+        for route, routed_qa in grouped_qa.items():
+            if not routed_qa:
+                continue
+            eval_args = eval_args_by_route[route]
+            questions = [qa["question"] for _, qa in routed_qa]
+            embedding_batches[route] = (
+                routed_qa,
+                get_embeddings(eval_args.retriever, questions, "query"),
+            )
+
+        for route, (routed_qa, q_embeddings) in embedding_batches.items():
+            trainer = trainers[route]
+            eval_args = eval_args_by_route[route]
+            top_k_eval = top_k_by_route[route]
+            memory_bank = memory_banks_by_route.get(route, {}).get(sample_id)
+            if memory_bank is None:
+                print(f"[RouterEval] Missing {route} memory bank for sample_id={sample_id}, skipping routed questions.")
+                continue
+            for idx, (qa_idx, qa) in enumerate(routed_qa):
+                question = qa["question"]
+                q_embedding = q_embeddings[idx]
+                retrieved_mems, retrieved_indices = memory_bank.retrieve(
+                    q_embedding, top_k=top_k_eval, use_state_encoder=False
+                )
+                prompt = trainer.evaluator.build_prompt(question, retrieved_mems, qa)
+                negative_memories = []
+                retrieve_negative_memories = getattr(trainer, "retrieve_negative_memories", None)
+                if callable(retrieve_negative_memories):
+                    negative_memories = list(
+                        retrieve_negative_memories(
+                            question,
+                            category=qa.get("category", None),
+                        )
+                    )
+                    if negative_memories:
+                        prompt = _prepend_negative_memory_context(prompt, negative_memories)
+                else:
+                    add_negative_context = getattr(trainer, "add_negative_memory_context_to_prompt", None)
+                    if callable(add_negative_context):
+                        prompt = add_negative_context(
+                            prompt,
+                            question,
+                            category=qa.get("category", None),
+                        )
+
+                task_args.append((next_qid, prompt, eval_args))
+                meta_by_qid[next_qid] = {
+                    "qa": qa,
+                    "qa_idx": qa_idx,
+                    "sample_id": sample_id,
+                    "retrieved_memories": retrieved_mems,
+                    "retrieved_indices": list(retrieved_indices),
+                    "negative_memories": negative_memories,
+                    "router_selected": route,
+                    "router_reason": route_reasons.get((route, qa_idx), ""),
+                }
+                route_counts[route] = route_counts.get(route, 0) + 1
+                next_qid += 1
+
+    if not task_args:
+        print("No router evaluation queries found.")
+        return {}
+
+    ret = get_llm_response(args=eval_args_by_route["candidate"], task_args=task_args)
+
+    predictions = {}
+    metrics = {"f1": [], "llm_judge": []}
+    category_metrics = {}
+    query_records: Dict[int, Dict[str, Any]] = {}
+
+    for qid, response, _, success in ret:
+        meta = meta_by_qid.get(qid, {})
+        qa = meta.get("qa", {})
+        route = meta.get("router_selected", "candidate")
+        trainer = trainers.get(route, reference_trainer)
+        ground_truth = trainer.evaluator.get_ground_truth(qa)
+        prediction = response.strip() if success and response is not None else ""
+        if callable(extractor):
+            prediction = extractor(prediction)
+        predictions[qid] = prediction
+
+        f1 = trainer.evaluator.compute_f1(prediction, ground_truth, qa)
+        metrics["f1"].append(f1)
+
+        category = qa.get("category")
+        if category is not None:
+            bucket = category_metrics.setdefault(category, {"f1": [], "llm_judge": []})
+            bucket["f1"].append(f1)
+
+        query_records[qid] = {
+            "qid": qid,
+            "sample_id": meta.get("sample_id", ""),
+            "qa_idx": meta.get("qa_idx"),
+            "category": category,
+            "question": qa.get("question", ""),
+            "ground_truth": ground_truth,
+            "prediction": prediction,
+            "f1": float(f1),
+            "llm_judge": None,
+            "retrieved_memories": list(meta.get("retrieved_memories", [])),
+            "retrieved_indices": list(meta.get("retrieved_indices", [])),
+            "negative_memories": list(meta.get("negative_memories", [])),
+            "router_selected": route,
+            "router_reason": meta.get("router_reason", ""),
+        }
+
+    judge_task_args = []
+    for qid, meta in meta_by_qid.items():
+        qa = meta.get("qa", {})
+        route = meta.get("router_selected", "candidate")
+        trainer = trainers.get(route, reference_trainer)
+        ground_truth = trainer.evaluator.get_ground_truth(qa)
+        if isinstance(ground_truth, list):
+            ground_truth_str = ", ".join(str(ans) for ans in ground_truth)
+        else:
+            ground_truth_str = str(ground_truth)
+        prediction = predictions.get(qid, "")
+        judge_task_args.append((
+            qid,
+            LLM_JUDGE_GENERAL_PROMPT.format(
+                question=qa.get("question", ""),
+                ground_truth=ground_truth_str,
+                model_answer=prediction,
+            ),
+            eval_args_by_route.get(route, eval_args_by_route["candidate"]),
+        ))
+
+    llm_judge_scores = {}
+    if judge_task_args:
+        judge_scores = llm_judge(task_args=judge_task_args, args=eval_args_by_route["candidate"])
+        for idx, (qid, _, _) in enumerate(judge_task_args):
+            llm_judge_scores[qid] = judge_scores[idx]
+
+    for qid, score in llm_judge_scores.items():
+        metrics["llm_judge"].append(float(score))
+        meta = meta_by_qid.get(qid, {})
+        qa = meta.get("qa", {})
+        category = qa.get("category")
+        if category is not None and category in category_metrics:
+            category_metrics[category]["llm_judge"].append(float(score))
+        if qid in query_records:
+            query_records[qid]["llm_judge"] = float(score)
+
+    def _avg(values: List[float]) -> float:
+        return float(np.mean(values)) if values else 0.0
+
+    category_summary = {}
+    for category, data in category_metrics.items():
+        category_summary[str(category)] = {
+            "f1": _avg(data["f1"]),
+            "llm_judge": _avg(data["llm_judge"]),
+            "count": len(data["f1"]),
+        }
+
+    print("\n" + "=" * 80)
+    print(f"{args.dataset} Question-Router Evaluation (query-wise averages)")
+    print("=" * 80)
+    print(f"Router mode: {router_mode}")
+    print(f"Selected baseline rows: {route_counts.get('baseline', 0)}")
+    print(f"Selected candidate rows: {route_counts.get('candidate', 0)}")
+    print(f"Total queries: {len(metrics['f1'])}")
+    print(f"F1: {_avg(metrics['f1']):.4f}")
+    print(f"LLM Judge: {_avg(metrics['llm_judge']):.4f}")
+
+    if category_metrics:
+        print("\nBy category:")
+        for category in sorted(category_metrics.keys()):
+            data = category_metrics[category]
+            print(
+                f"Category {category}: "
+                f"F1={_avg(data['f1']):.4f}, "
+                f"LLM Judge={_avg(data['llm_judge']):.4f}"
+            )
+
+    output = {
+        "dataset": args.dataset,
+        "router_mode": router_mode,
+        "summary": {
+            "total_queries": len(metrics["f1"]),
+            "f1": _avg(metrics["f1"]),
+            "llm_judge": _avg(metrics["llm_judge"]),
+            "selected_baseline_rows": route_counts.get("baseline", 0),
+            "selected_candidate_rows": route_counts.get("candidate", 0),
+        },
+        "category_metrics": category_summary,
+        "results": [query_records[qid] for qid in sorted(query_records.keys())],
+    }
+
+    out_file = getattr(args, "out_file", None)
+    if out_file:
+        out_dir = os.path.dirname(out_file)
+        if out_dir:
+            os.makedirs(out_dir, exist_ok=True)
+        with open(out_file, "w", encoding="utf-8") as handle:
+            json.dump(_json_safe(output), handle, ensure_ascii=False, indent=2)
+        print(f"Saved detailed router evaluation results to {out_file}")
+
+    return output
+
+
+def build_text_dataset_memory_banks(trainer: BaseTrainer, test_data, args):
     print("\n" + "="*80)
     print("Constructing Memory Banks for Test Set")
     print("="*80)
@@ -860,9 +1107,86 @@ def infer_text_dataset_memories(trainer: BaseTrainer, test_data, args):
         f"computed {computed_count} new memory banks."
     )
     print(f"Memory cache directory: {memory_dir}")
+    return memory_dir, memory_banks
+
+
+def infer_text_dataset_memories(trainer: BaseTrainer, test_data, args):
+    memory_dir, memory_banks = build_text_dataset_memory_banks(trainer, test_data, args)
     print("Running evaluation on test queries...")
     evaluate_text_dataset_queries(trainer, test_data, memory_banks, args)
     return memory_dir
+
+
+def _copy_args_with_overrides(args, **overrides):
+    values = vars(args).copy()
+    values.update(overrides)
+    return SimpleNamespace(**values)
+
+
+def run_question_router_eval(args, test_data):
+    if args.dataset != "locomo":
+        raise ValueError("--enable-question-router-eval is currently implemented for LoCoMo only.")
+    if not args.router_baseline_checkpoint:
+        raise ValueError("Set --router-baseline-checkpoint for question-router eval.")
+    if not args.router_candidate_checkpoint:
+        raise ValueError("Set --router-candidate-checkpoint for question-router eval.")
+
+    baseline_suffix = (
+        getattr(args, "router_baseline_memory_cache_suffix", None)
+        or f"{getattr(args, 'memory_cache_suffix', '')}_router_baseline"
+    )
+    candidate_suffix = (
+        getattr(args, "router_candidate_memory_cache_suffix", None)
+        or f"{getattr(args, 'memory_cache_suffix', '')}_router_candidate"
+    )
+
+    branch_specs = {
+        "baseline": {
+            "checkpoint": args.router_baseline_checkpoint,
+            "skill_tree_dir": args.router_baseline_skill_tree_dir or args.skill_tree_dir,
+            "save_dir": args.router_baseline_save_dir or args.save_dir,
+            "memory_cache_suffix": baseline_suffix,
+        },
+        "candidate": {
+            "checkpoint": args.router_candidate_checkpoint,
+            "skill_tree_dir": args.router_candidate_skill_tree_dir or args.skill_tree_dir,
+            "save_dir": args.router_candidate_save_dir or args.save_dir,
+            "memory_cache_suffix": candidate_suffix,
+        },
+    }
+
+    trainers: Dict[str, BaseTrainer] = {}
+    memory_banks_by_route: Dict[str, Dict[str, Any]] = {}
+
+    for route, spec in branch_specs.items():
+        branch_args = _copy_args_with_overrides(
+            args,
+            load_checkpoint=spec["checkpoint"],
+            skill_tree_dir=spec["skill_tree_dir"],
+            save_dir=spec["save_dir"],
+            memory_cache_suffix=spec["memory_cache_suffix"],
+        )
+        branch_config = AgenticMemoryConfig()
+        branch_config.update_from_args(branch_args)
+        print("\n" + "=" * 80)
+        print(f"Initializing question-router {route} branch")
+        print(f"checkpoint={spec['checkpoint']}")
+        print(f"skill_tree_dir={spec['skill_tree_dir']}")
+        print(f"memory_cache_suffix={spec['memory_cache_suffix']}")
+        print("=" * 80)
+        trainer = get_trainer(branch_args, branch_config)
+        trainer.load_checkpoint(spec["checkpoint"])
+        _, memory_banks = build_text_dataset_memory_banks(trainer, test_data, branch_args)
+        trainers[route] = trainer
+        memory_banks_by_route[route] = memory_banks
+
+    print("Running end-to-end question-router evaluation on test queries...")
+    return evaluate_text_dataset_queries_with_router(
+        trainers=trainers,
+        test_data=test_data,
+        memory_banks_by_route=memory_banks_by_route,
+        args=args,
+    )
 
 
 def _collect_alfworld_trajectories(train_data) -> list:
@@ -1155,6 +1479,13 @@ def main():
         test_data = eval_data
         val_data = {}
     print(f"Train: {len(train_data)}, Val: {len(val_data)}, Test: {len(test_data)}")
+
+    if args.eval_only and getattr(args, "enable_question_router_eval", False):
+        run_question_router_eval(args, test_data)
+        print("\n" + "="*80)
+        print("Done!")
+        print("="*80)
+        return
 
     # Initialize trainer
     print("\nInitializing Agentic Memory Trainer...")

@@ -103,6 +103,8 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/repeat_locomo_skilltree_curated_agg055_cat23match.sh` | Repeat the selective category-2/3 matched curated aggregate setting |
 | `scripts/repeat_locomo_skilltree_curated_agg055_cat3match.sh` | Repeat the selective category-3 matched curated aggregate setting |
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
+| `scripts/eval_locomo_question_router_v2_end2end.sh` | Run the true question-router v2 eval path, routing each LoCoMo question before answer generation |
+| `scripts/repeat_locomo_question_router_v2_end2end.sh` | Repeat the true question-router v2 eval path and write a normal repeat `summary.tsv` |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
@@ -169,7 +171,7 @@ and memory construction also introduce run-to-run variance.
 | Pruned bad3 evolved-checkpoint eval | Evaluate checkpoint after isolated skill-tree-evolution training | copied `skills_memory/`, pruned bad3, top1, 1200 chars; evolution applied 0 skill-tree changes | 0.2534 | 0.3694 | Strong single run; diff showed no skill-tree edits, so the gain is from the trained checkpoint and needs repeat validation |
 | Pruned bad3 evolved-checkpoint repeat | Repeat the checkpoint produced by isolated pruned-bad3 training | same copied skill tree and final checkpoint from `skill_tree_evolution_pruned_bad3_20260519_134600` | 0.2377 +/- 0.0103 | 0.3217 +/- 0.0145 | New best repeated setting so far, but the gain is from checkpoint training, not skill-tree markdown evolution |
 | Pruned bad3 evolved-checkpoint category summary | Diagnose the evolved-checkpoint repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1633 / 0.2151 / 0.4742 / 0.2495 | 0.2705 / 0.1769 / 0.5667 / 0.3719 | Biggest repeat improvement over pruned bad3 is category 2 Judge and category 4; category 3 F1 is weaker than pruned bad3 |
-| Question-router v2 materialized repeat | Route between pruned bad3 and evolved checkpoint with question-text rules | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | Best current LoCoMo10 development result; assembled from repeated parent outputs, not yet a single-pass eval |
+| Question-router v2 materialized repeat | Route between pruned bad3 and evolved checkpoint with question-text rules | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | Best current LoCoMo10 development result; assembled from repeated parent outputs, now implemented as a true eval entrypoint for validation |
 | Question-router v2 category summary | Diagnose the materialized router result | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1691 / 0.2177 / 0.5602 / 0.2489 | 0.2826 / 0.1769 / 0.6500 / 0.3719 | Recovers evolved-checkpoint Cat3 loss while preserving most Cat2/Cat4 gains; Cat1 remains the residual weakness |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
@@ -327,6 +329,14 @@ and memory construction also introduce run-to-run variance.
     `question_router_risk_profile_baseline_v2_repeat/`, with `summary.tsv`,
     per-run JSON/log outputs, category summary, overall summary, and report.
     Use that directory when treating router v2 like a normal repeat config.
+36. Router v2 now has a true end-to-end eval entrypoint. The
+    `--enable-question-router-eval` path in `main.py` initializes the pruned
+    bad3 and evolved-checkpoint branches, builds each branch's memory banks,
+    routes each question by text, and generates the final answer only from the
+    selected branch. The next validation step is to run
+    `REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh` on the
+    remote experiment machine and compare the repeat summary with the
+    materialized diagnostic.
 
 ## Recommended Next Experiments
 
@@ -462,20 +472,31 @@ and memory construction also introduce run-to-run variance.
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/repeat_eval_YYYYMMDD_HHMMSS/question_compare_evolved_checkpoint_vs_pruned_bad3_all_question_router_risk_profile_baseline_v2_runs.tsv
    ```
 
-13. Use the materialized `risk_profile_baseline_v2` repeat summary for the next
-   comparison pass:
+13. Validate `risk_profile_baseline_v2` as a true end-to-end eval method:
+
+   ```bash
+   REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
+
+   column -t -s $'\t' \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/summary.tsv
+   ```
+
+   This is the formal follow-up to the materialized diagnostic: routing happens
+   before answer generation inside `main.py`, not after two parent JSON outputs
+   already exist.
+
+14. Keep the materialized `risk_profile_baseline_v2` repeat summary as an
+   analysis and sanity-check artifact:
 
    ```bash
    bash scripts/analyze_question_router_v2_materialized.sh
    ```
 
    This prints an overall three-config table, the router category summary, and
-   router-vs-parent category deltas, and writes a compact markdown report. Then
-   decide whether to implement the same question-text route inside an
-   end-to-end eval script.
-14. Run on a larger split or another long-memory benchmark after the small
+   router-vs-parent category deltas, and writes a compact markdown report.
+15. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
-15. Keep fine-tuning/RL over negative examples as a later phase. The current
+16. Keep fine-tuning/RL over negative examples as a later phase. The current
    prompt-level negative-memory mechanism is the cheaper and more inspectable
    first implementation.
 

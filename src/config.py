@@ -417,6 +417,27 @@ def get_agentic_memory_args():
                         help='Skip loading snapshot manager from checkpoint')
     parser.add_argument('--memory-cache-suffix', type=str, default='',
                         help='Optional suffix appended to memory cache filenames')
+    parser.add_argument('--enable-question-router-eval', action='store_true',
+                        help='Run LoCoMo eval with a text question router over two checkpoints')
+    parser.add_argument('--question-router-mode', type=str, default='risk_profile_baseline_v2',
+                        choices=['risk_baseline_v1', 'risk_profile_baseline_v1', 'risk_profile_baseline_v2', 'candidate_all', 'baseline_all'],
+                        help='Question-text router mode for --enable-question-router-eval')
+    parser.add_argument('--router-baseline-checkpoint', type=str, default=None,
+                        help='Baseline checkpoint used when the question router selects baseline')
+    parser.add_argument('--router-candidate-checkpoint', type=str, default=None,
+                        help='Candidate checkpoint used when the question router selects candidate')
+    parser.add_argument('--router-baseline-skill-tree-dir', type=str, default=None,
+                        help='Skill-tree dir for router baseline branch; defaults to --skill-tree-dir')
+    parser.add_argument('--router-candidate-skill-tree-dir', type=str, default=None,
+                        help='Skill-tree dir for router candidate branch; defaults to --skill-tree-dir')
+    parser.add_argument('--router-baseline-save-dir', type=str, default=None,
+                        help='Save dir for router baseline branch; defaults to --save-dir')
+    parser.add_argument('--router-candidate-save-dir', type=str, default=None,
+                        help='Save dir for router candidate branch; defaults to --save-dir')
+    parser.add_argument('--router-baseline-memory-cache-suffix', type=str, default=None,
+                        help='Memory cache suffix for router baseline branch')
+    parser.add_argument('--router-candidate-memory-cache-suffix', type=str, default=None,
+                        help='Memory cache suffix for router candidate branch')
 
     # Wandb args
     parser.add_argument('--wandb-project', type=str, default='memskill', help='Wandb project name')

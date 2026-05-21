@@ -25,9 +25,11 @@ Current scripts:
 | `eval_locomo_skilltree_negmem_curated_agg055.sh` | Current best-known curated aggregate LoCoMo evaluation entrypoint; defaults to top-1 negative memory with 1200 chars |
 | `eval_locomo_skilltree_negmem_curated_agg055_catmatch.sh` | Curated agg055 ablation that restricts QA-time negative memories to the current LoCoMo category tag |
 | `eval_locomo_skilltree_negmem_curated_agg055_cat23match.sh` | Curated agg055 ablation that restricts QA-time negative memories only for LoCoMo category 2 and 3 |
+| `eval_locomo_question_router_v2_end2end.sh` | True LoCoMo question-router v2 eval entrypoint; routes each question to pruned bad3 or evolved checkpoint before answer generation |
 | `repeat_locomo_skilltree_negmem_curated_agg055.sh` | Repeat the current best-known curated aggregate LoCoMo evaluation and report mean/std |
 | `repeat_locomo_skilltree_curated_agg055_cat23match.sh` | Repeat the selective category-2/3 matched curated aggregate LoCoMo ablation |
 | `repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
+| `repeat_locomo_question_router_v2_end2end.sh` | Repeat the true question-router v2 eval and write a normal repeat `summary.tsv` |
 | `summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `compare_locomo_repeat_questions.py` | Compare detailed question-level JSON outputs between two configs, including retrieved memory and negative-memory context |

@@ -50,5 +50,7 @@ end-to-end eval.
 - The router's main value over the evolved checkpoint is Cat3 recovery.
 - Cat2 and Cat4 mostly preserve the evolved checkpoint gains.
 - Cat1 remains the main residual weakness relative to pruned bad3.
-- Because this is assembled from repeated parent outputs, the next method step
-  is an end-to-end router eval entry point using the same question-text rules.
+- The same question-text rules now have an end-to-end eval entrypoint:
+  `REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh`.
+  Use that repeat to validate whether the materialized diagnostic holds when
+  routing happens before answer generation.
