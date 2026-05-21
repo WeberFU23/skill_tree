@@ -105,6 +105,7 @@ problem, wrong behavior, correction, trigger, and lesson.
 | `scripts/repeat_locomo_skilltree_core_configs.sh` | Repeat the three key LoCoMo comparison configs: no negative, raw top-2, and curated agg055 top-1/1200 |
 | `scripts/eval_locomo_question_router_v2_end2end.sh` | Run the true question-router v2 eval path, routing each LoCoMo question before answer generation |
 | `scripts/repeat_locomo_question_router_v2_end2end.sh` | Repeat the true question-router v2 eval path and write a normal repeat `summary.tsv` |
+| `scripts/analyze_question_router_v2_end2end.sh` | Analyze the true question-router v2 repeat with category summaries, parent comparisons, and a markdown report |
 | `scripts/summarize_locomo_repeat_categories.py` | Parse repeat logs and aggregate LoCoMo category-wise F1 / LLM Judge means |
 | `scripts/compare_locomo_repeat_configs.py` | Compare category-wise deltas between two repeat configs, e.g. curated agg055 vs raw top-2 |
 | `scripts/compare_locomo_repeat_questions.py` | Compare detailed per-question eval JSON outputs between two configs |
@@ -173,6 +174,7 @@ and memory construction also introduce run-to-run variance.
 | Pruned bad3 evolved-checkpoint category summary | Diagnose the evolved-checkpoint repeat | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1633 / 0.2151 / 0.4742 / 0.2495 | 0.2705 / 0.1769 / 0.5667 / 0.3719 | Biggest repeat improvement over pruned bad3 is category 2 Judge and category 4; category 3 F1 is weaker than pruned bad3 |
 | Question-router v2 materialized repeat | Route between pruned bad3 and evolved checkpoint with question-text rules | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2447 +/- 0.0026 | 0.3296 +/- 0.0060 | Best current LoCoMo10 development result; assembled from repeated parent outputs, now implemented as a true eval entrypoint for validation |
 | Question-router v2 category summary | Diagnose the materialized router result | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1691 / 0.2177 / 0.5602 / 0.2489 | 0.2826 / 0.1769 / 0.6500 / 0.3719 | Recovers evolved-checkpoint Cat3 loss while preserving most Cat2/Cat4 gains; Cat1 remains the residual weakness |
+| Question-router v2 end-to-end repeat | Route between pruned bad3 and evolved checkpoint inside eval before answer generation | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2424 +/- 0.0204 | 0.3530 +/- 0.0248 | Formal router result: F1 stays above both parents and close to the materialized diagnostic; Judge is the strongest repeated score so far |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -337,6 +339,11 @@ and memory construction also introduce run-to-run variance.
     `REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh` on the
     remote experiment machine and compare the repeat summary with the
     materialized diagnostic.
+37. The first end-to-end router v2 repeat on 2026-05-21 reached F1
+    0.2424 +/- 0.0204 and LLM Judge 0.3530 +/- 0.0248. This makes router v2 a
+    formal method rather than only a diagnostic. It slightly trails the
+    materialized diagnostic on F1 (0.2447) but exceeds it on Judge (0.3296),
+    and it beats both parent repeated configs on both headline metrics.
 
 ## Recommended Next Experiments
 
@@ -479,11 +486,16 @@ and memory construction also introduce run-to-run variance.
 
    column -t -s $'\t' \
      results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/summary.tsv
+
+   bash scripts/analyze_question_router_v2_end2end.sh
+
+   sed -n '1,120p' \
+     results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/report.md
    ```
 
-   This is the formal follow-up to the materialized diagnostic: routing happens
-   before answer generation inside `main.py`, not after two parent JSON outputs
-   already exist.
+   This has now produced the first formal repeat: F1 0.2424 +/- 0.0204 and
+   LLM Judge 0.3530 +/- 0.0248. Use the analysis script to inspect category
+   deltas against both parent configs before changing the router rules again.
 
 14. Keep the materialized `risk_profile_baseline_v2` repeat summary as an
    analysis and sanity-check artifact:

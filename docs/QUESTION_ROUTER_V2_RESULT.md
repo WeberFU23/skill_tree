@@ -10,6 +10,11 @@ It improves over pruned bad3 (0.2309 / 0.3095) and the evolved checkpoint
 from repeated baseline and evolved-checkpoint outputs, not a single-pass
 end-to-end eval.
 
+The corresponding true end-to-end router repeat is now available as
+`question_router_risk_profile_baseline_v2_end2end`: F1 0.2424 +/- 0.0204,
+LLM Judge 0.3530 +/- 0.0248. That is the formal method result; the table below
+keeps the materialized diagnostic because it explains why the route was chosen.
+
 ## Overall
 
 | Config | n | F1 Mean | F1 Std | Judge Mean | Judge Std |
@@ -52,5 +57,6 @@ end-to-end eval.
 - Cat1 remains the main residual weakness relative to pruned bad3.
 - The same question-text rules now have an end-to-end eval entrypoint:
   `REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh`.
-  Use that repeat to validate whether the materialized diagnostic holds when
-  routing happens before answer generation.
+- The first end-to-end repeat validates the method path: F1 remains above both
+  parents and close to the materialized diagnostic, while Judge becomes the
+  strongest repeated score so far.

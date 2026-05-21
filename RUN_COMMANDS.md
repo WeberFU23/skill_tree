@@ -603,6 +603,11 @@ REPEATS=3 bash scripts/repeat_locomo_question_router_v2_end2end.sh
 
 column -t -s $'\t' \
   results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/summary.tsv
+
+bash scripts/analyze_question_router_v2_end2end.sh
+
+sed -n '1,120p' \
+  results/skill_tree_evolution_pruned_bad3_YYYYMMDD_HHMMSS/question_router_risk_profile_baseline_v2_end2end_repeat_YYYYMMDD_HHMMSS/report.md
 ```
 
 For a single run:
@@ -615,6 +620,12 @@ The single-run script auto-selects the newest
 `results/skill_tree_evolution_pruned_bad3_*` directory unless `RUN_DIR` is set.
 It defaults to `risk_profile_baseline_v2`, `locomo10.json`, pruned bad3
 negative memories, and top-1 / 1200-char negative-memory retrieval.
+
+The 2026-05-21 end-to-end router repeat reached F1 `0.2424 +/- 0.0204`
+and LLM Judge `0.3530 +/- 0.0248`. This is now the formal router result:
+F1 is close to the materialized diagnostic and still above both parent
+configs, while Judge is higher than the materialized diagnostic and both
+parents.
 
 The older materialized diagnostic script still writes:
 
