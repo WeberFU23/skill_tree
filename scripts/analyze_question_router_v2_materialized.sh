@@ -151,30 +151,10 @@ if [[ -d "$ROUTER_MATERIALIZED_DIR" ]]; then
         find "$ROUTER_MATERIALIZED_DIR/logs" -maxdepth 1 -type f -name '*.log' \
             -exec cp {} "$ROUTER_REPEAT_DIR/logs/" \;
     fi
-    awk -F '\t' -v OFS='\t' -v repeat_dir="$ROUTER_REPEAT_DIR" '
-    NR == 1 {
-        for (i = 1; i <= NF; i++) {
-            if ($i == "log") {
-                log_col = i
-            }
-            if ($i == "out_file") {
-                out_col = i
-            }
-        }
-        print
-        next
-    }
-    {
-        if (log_col) {
-            n = split($log_col, log_parts, "/")
-            $log_col = repeat_dir "/logs/" log_parts[n]
-        }
-        if (out_col) {
-            n = split($out_col, out_parts, "/")
-            $out_col = repeat_dir "/" out_parts[n]
-        }
-        print
-    }' "$ROUTER_SUMMARY" > "$ROUTER_REPEAT_DIR/summary.tsv"
+    python -B scripts/rewrite_repeat_summary_paths.py \
+        "$ROUTER_SUMMARY" \
+        --repeat-dir "$ROUTER_REPEAT_DIR" \
+        --out "$ROUTER_REPEAT_DIR/summary.tsv"
     cp "$OVERALL_SUMMARY" "$ROUTER_REPEAT_DIR/overall_summary.tsv"
     cp "$ROUTER_CATEGORY_SUMMARY" "$ROUTER_REPEAT_DIR/category_summary.tsv"
     cp "$REPORT_FILE" "$ROUTER_REPEAT_DIR/report.md"
