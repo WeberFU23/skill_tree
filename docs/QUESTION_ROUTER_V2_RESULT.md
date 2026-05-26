@@ -27,6 +27,12 @@ drop on F1, with Cat3 taking the largest hit (-0.0469 F1, -0.0750 Judge).
 The next narrow ablation is `risk_profile_baseline_v4`: remove only
 `what kind of`, but keep the v2 `would ... prefer` route.
 
+That v4 ablation was tested twice and did not beat v2. The latest true
+end-to-end repeat scored F1 0.2371 +/- 0.0183 and LLM Judge
+0.3317 +/- 0.0190, with 19/314 questions routed to the baseline. Directly
+against v2, v4 improves Cat2 F1 (+0.0253) but loses Cat1, Cat3, and Cat4;
+the Cat3 loss (-0.0508 F1, -0.0667 Judge) is enough to reject it.
+
 ## Formal End-to-End Repeats
 
 | Config | n | F1 Mean | F1 Std | Judge Mean | Judge Std | Baseline Rows |
@@ -35,6 +41,7 @@ The next narrow ablation is `risk_profile_baseline_v4`: remove only
 | evolved_checkpoint | 3 | 0.2377 | 0.0103 | 0.3217 | 0.0145 | 0 |
 | question_router_risk_profile_baseline_v2_end2end | 3 | 0.2424 | 0.0204 | 0.3530 | 0.0248 | 35 |
 | question_router_risk_profile_baseline_v3_end2end | 3 | 0.2350 | 0.0032 | 0.3471 | 0.0107 | 17 |
+| question_router_risk_profile_baseline_v4_end2end | 3 | 0.2371 | 0.0183 | 0.3317 | 0.0190 | 19 |
 
 ## Materialized Diagnostic Overall
 
@@ -86,4 +93,7 @@ The next narrow ablation is `risk_profile_baseline_v4`: remove only
 - Use `scripts/compare_question_router_end2end_versions.sh` to inspect direct
   v3-minus-v2 question-level deltas before changing router rules again.
 - `risk_profile_baseline_v4` isolates the next test: v2 minus only the
-  `what kind of` route, retaining `would ... prefer`.
+  `what kind of` route, retaining `would ... prefer`. It also fails to beat
+  v2, mainly because Cat3 and Judge regress.
+- Stop promoting router micro-prunes on LoCoMo10; use v2 for the formal method
+  until larger-split validation says otherwise.

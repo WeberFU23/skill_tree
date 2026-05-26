@@ -177,6 +177,7 @@ and memory construction also introduce run-to-run variance.
 | Question-router v2 category summary | Diagnose the materialized router result | Cat1 / Cat2 / Cat3 / Cat4 F1 means | 0.1691 / 0.2177 / 0.5602 / 0.2489 | 0.2826 / 0.1769 / 0.6500 / 0.3719 | Recovers evolved-checkpoint Cat3 loss while preserving most Cat2/Cat4 gains; Cat1 remains the residual weakness |
 | Question-router v2 end-to-end repeat | Route between pruned bad3 and evolved checkpoint inside eval before answer generation | `risk_profile_baseline_v2`, 35/314 rows per run routed to pruned bad3 | 0.2424 +/- 0.0204 | 0.3530 +/- 0.0248 | Formal router result: F1 stays above both parents and close to the materialized diagnostic; Judge is the strongest repeated score so far |
 | Question-router v3 end-to-end repeat | Prune broad harmful v2 baseline routes and rerun true router eval | `risk_profile_baseline_v3`, 17/314 rows per run routed to pruned bad3 | 0.2350 +/- 0.0032 | 0.3471 +/- 0.0107 | More conservative and stable, but weaker than v2; keep v2 as the current formal router |
+| Question-router v4 end-to-end repeat | Isolate v2 minus only the `what kind of` baseline route | `risk_profile_baseline_v4`, 19/314 rows per run routed to pruned bad3 | 0.2371 +/- 0.0183 | 0.3317 +/- 0.0190 | Cat2 improves but Cat3/Judge regress; v2 remains the formal router |
 | Designer-enabled ablation | Test original MemSkill designer together with skill-tree + negative memory | `--enable-designer`, raw negative top2 | 0.2016 | 0.2627 | Did not improve test score; the legacy designer refined the flat `operation_bank.insert`, while the active skill-tree path uses `skills_memory/` |
 | Insert trigger tuning check | Test stronger entity-fact insertion wording after designer diagnosis | tuned `skills_memory/.../insert.md`, raw negative store had grown to 60 entries | 0.1189 | 0.1688 | Not a clean comparison; the raw negative-memory store was polluted by 20 extra auto-recorded failures and became much noisier |
 | Insert trigger tuning clean check | Re-test stronger entity-fact insertion wording after restoring the raw negative store to 40 entries | tuned `skills_memory/.../insert.md`, raw negative top2 | 0.1907 | 0.2675 | Clean comparison still underperformed raw top2 baseline, so the insert tuning was reverted |
@@ -366,6 +367,12 @@ and memory construction also introduce run-to-run variance.
     F1, with Cat3 dropping by -0.0469 F1 and -0.0750 Judge. The next narrow
     ablation is `risk_profile_baseline_v4`, which removes only `what kind of`
     from v2 while keeping the `would ... prefer` risk route.
+42. The v4 isolating ablation also fails to beat v2. The latest 2026-05-22
+    repeat reached F1 0.2371 +/- 0.0183 and LLM Judge 0.3317 +/- 0.0190,
+    with 19/314 rows routed to the baseline. Direct v4-minus-v2 comparison
+    shows Cat2 F1 improves (+0.0253), but Cat1 (-0.0070 F1), Cat3
+    (-0.0508 F1 / -0.0667 Judge), and Cat4 (-0.0113 F1 / -0.0281 Judge)
+    regress. Treat v3/v4 as ablations and keep v2 as the formal method.
 
 ## Recommended Next Experiments
 
@@ -541,8 +548,8 @@ and memory construction also introduce run-to-run variance.
    The 2026-05-21 repeat showed v3 is lower than v2 on headline F1 and Judge
    despite lower variance. Treat v3 as an informative ablation unless direct
    question-level deltas reveal a narrow rule worth carrying into a v4.
-16. Run the v4 isolating ablation if you want to test whether the useful part
-    of v3 is only the `what kind of` removal:
+16. The v4 isolating ablation has now been run; keep this command only for
+    reproduction:
 
    ```bash
    QUESTION_ROUTER_MODE=risk_profile_baseline_v4 \
@@ -556,8 +563,9 @@ and memory construction also introduce run-to-run variance.
      bash scripts/compare_question_router_end2end_versions.sh
    ```
 
-   This is not a promoted default. It is a controlled test of v2 minus only
-   the broad `what kind of` baseline route.
+   The latest v4 repeat scored F1 0.2371 +/- 0.0183 and LLM Judge
+   0.3317 +/- 0.0190, below v2's 0.2424 +/- 0.0204 and
+   0.3530 +/- 0.0248. Do not promote v4.
 17. Run on a larger split or another long-memory benchmark after the small
    LoCoMo10 development loop is stable.
 18. Keep fine-tuning/RL over negative examples as a later phase. The current

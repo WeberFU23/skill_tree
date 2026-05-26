@@ -674,6 +674,12 @@ CANDIDATE_ROUTER_MODE=risk_profile_baseline_v4 \
   bash scripts/compare_question_router_end2end_versions.sh
 ```
 
+The 2026-05-22 v4 repeat scored F1 `0.2371 +/- 0.0183` and LLM Judge
+`0.3317 +/- 0.0190`, with 19/314 questions routed to the baseline. A direct
+v4-minus-v2 comparison shows Cat2 F1 improves (`+0.0253`), but Cat1, Cat3, and
+Cat4 regress; Cat3 drops by `-0.0508` F1 and `-0.0667` Judge. Do not promote
+v4; keep v2 as the formal router.
+
 The older materialized diagnostic script still writes:
 
 - `*_selected.tsv`: one row per question with selected prediction/reason.
